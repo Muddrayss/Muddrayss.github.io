@@ -1,12 +1,13 @@
 // app.js
 
 // XR globals.
-let xrButton = document.getElementById('xr-button');
+const xrButton = document.getElementById('xr-button');
+const statusDiv = document.getElementById('status');
 let xrSession = null;
 let xrRefSpace = null;
 let xrHitTestSource = null;
 
-// WebGL and Three.js globals.
+// Three.js and WebGL globals.
 let gl = null;
 let renderer = null;
 let scene = null;
@@ -18,18 +19,28 @@ let field = null;
 let isFieldCreated = false;
 let reticle = null;
 let line = null;
+let paddle1 = null;
+let paddle2 = null;
+let ball = null;
+let ballVelocity = new THREE.Vector3(0.02, 0, 0.02);
 
 function initXR() {
   if (navigator.xr) {
-    navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
-      if (supported) {
-        xrButton.innerHTML = 'Enter AR';
-        xrButton.disabled = false;
-        xrButton.addEventListener('click', onButtonClicked);
-      } else {
+    navigator.xr
+      .isSessionSupported('immersive-ar')
+      .then((supported) => {
+        if (supported) {
+          xrButton.innerHTML = 'Enter AR';
+          xrButton.disabled = false;
+          xrButton.addEventListener('click', onButtonClicked);
+        } else {
+          xrButton.innerHTML = 'AR not supported';
+        }
+      })
+      .catch((err) => {
+        console.error('Error checking XR support:', err);
         xrButton.innerHTML = 'AR not supported';
-      }
-    });
+      });
   } else {
     xrButton.innerHTML = 'WebXR not available';
   }
@@ -44,6 +55,7 @@ function onButtonClicked() {
       })
       .then(onSessionStarted, (e) => {
         console.error('Failed to start AR session:', e);
+        alert('Failed to start AR session. See console for details.');
       });
   } else {
     xrSession.end();
@@ -57,7 +69,8 @@ function onSessionStarted(session) {
   session.addEventListener('end', onSessionEnded);
   session.addEventListener('select', onSelect);
 
-  let canvas = document.createElement('canvas');
+  // Create a canvas and renderer.
+  const canvas = document.createElement('canvas');
   canvas.id = 'canvas';
   document.body.appendChild(canvas);
   gl = canvas.getContext('webgl', { xrCompatible: true });
@@ -68,30 +81,45 @@ function onSessionStarted(session) {
   });
   renderer.autoClear = false;
 
+  // Initialize Three.js scene.
+  setupThreeJS();
+
+  // Set the WebXR session's render state.
   session.updateRenderState({ baseLayer: new XRWebGLLayer(session, gl) });
 
+  // Request a reference space.
   session.requestReferenceSpace('local').then((refSpace) => {
     xrRefSpace = refSpace;
-    // Start rendering.
+    // Start the render loop.
     session.requestAnimationFrame(onXRFrame);
   });
 
   // Set up hit testing.
-  session.requestReferenceSpace('viewer').then((viewerSpace) => {
-    xrSession
-      .requestHitTestSource({ space: viewerSpace })
-      .then((hitTestSource) => {
-        xrHitTestSource = hitTestSource;
-      });
-  });
+  session
+    .requestReferenceSpace('viewer')
+    .then((viewerSpace) => {
+      session
+        .requestHitTestSource({ space: viewerSpace })
+        .then((hitTestSource) => {
+          xrHitTestSource = hitTestSource;
+        })
+        .catch((err) => {
+          console.error('Failed to create hit test source:', err);
+        });
+    })
+    .catch((err) => {
+      console.error('Failed to get viewer reference space:', err);
+    });
 
-  setupThreeJS();
+  // Update UI.
+  statusDiv.innerHTML = 'Tap to place 4 vertices.';
 }
 
 function onSessionEnded(event) {
   xrSession = null;
   xrButton.innerHTML = 'Enter AR';
-  document.body.removeChild(renderer.domElement);
+  statusDiv.innerHTML = '';
+  document.body.removeChild(document.getElementById('canvas'));
   gl = null;
   renderer = null;
   scene = null;
@@ -101,7 +129,9 @@ function onSessionEnded(event) {
   isFieldCreated = false;
   reticle = null;
   line = null;
-  document.getElementById('status').innerHTML = '';
+  paddle1 = null;
+  paddle2 = null;
+  ball = null;
 }
 
 function onSelect(event) {
@@ -109,6 +139,8 @@ function onSelect(event) {
     const position = new THREE.Vector3();
     position.setFromMatrixPosition(reticle.matrix);
     vertices.push(position.clone());
+
+    console.log(`Vertex ${vertices.length} placed at:`, position);
 
     // Visual feedback: place a small sphere at the vertex
     const sphereGeometry = new THREE.SphereGeometry(0.01, 16, 16);
@@ -122,11 +154,13 @@ function onSelect(event) {
     if (vertices.length === 4) {
       createPongField();
       isFieldCreated = true;
-      document.getElementById('status').innerHTML = 'Pong field created!';
+      statusDiv.innerHTML = 'Pong field created!';
+      console.log('Pong field created.');
+      // Initialize game elements
+      createPaddles();
+      createBall();
     } else {
-      document.getElementById(
-        'status'
-      ).innerHTML = `Vertex ${vertices.length}/4 placed`;
+      statusDiv.innerHTML = `Vertex ${vertices.length}/4 placed`;
     }
   }
 }
@@ -137,7 +171,7 @@ function setupThreeJS() {
   camera = new THREE.PerspectiveCamera();
   scene.add(camera);
 
-  // Add a light
+  // Add a directional light
   const light = new THREE.DirectionalLight(0xffffff, 1);
   light.position.set(0, 10, 0);
   scene.add(light);
@@ -200,6 +234,8 @@ function createPongField() {
 
   field = new THREE.Mesh(geometry, material);
   scene.add(field);
+
+  console.log('Pong field added to the scene.');
 }
 
 function updateLine() {
@@ -217,7 +253,58 @@ function updateLine() {
     const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffff00 });
     line = new THREE.Line(lineGeometry, lineMaterial);
     scene.add(line);
+
+    console.log('Connecting lines updated.');
   }
+}
+
+function createPaddles() {
+  // Calculate centers of two opposite sides
+  const side1Center = new THREE.Vector3()
+    .addVectors(vertices[0], vertices[1])
+    .multiplyScalar(0.5);
+  const side2Center = new THREE.Vector3()
+    .addVectors(vertices[2], vertices[3])
+    .multiplyScalar(0.5);
+
+  // Calculate the direction of the field
+  const fieldDirection = new THREE.Vector3()
+    .subVectors(vertices[1], vertices[0])
+    .normalize();
+
+  // Create paddle geometry
+  const paddleGeometry = new THREE.BoxGeometry(0.05, 0.005, 0.02);
+  const paddleMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+
+  // Paddle 1 (User-controlled)
+  paddle1 = new THREE.Mesh(paddleGeometry, paddleMaterial);
+  paddle1.position.copy(side1Center);
+  paddle1.lookAt(vertices[1]); // Align paddle with the field
+  scene.add(paddle1);
+
+  // Paddle 2 (Static or AI-controlled for now)
+  paddle2 = new THREE.Mesh(paddleGeometry, paddleMaterial);
+  paddle2.position.copy(side2Center);
+  paddle2.lookAt(vertices[3]); // Align paddle with the field
+  scene.add(paddle2);
+
+  console.log('Paddles created.');
+}
+
+function createBall() {
+  const ballGeometry = new THREE.SphereGeometry(0.01, 16, 16);
+  const ballMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  ball = new THREE.Mesh(ballGeometry, ballMaterial);
+
+  // Position the ball at the center of the field
+  const center = new THREE.Vector3()
+    .addVectors(vertices[0], vertices[2])
+    .multiplyScalar(0.5);
+  ball.position.copy(center);
+
+  scene.add(ball);
+
+  console.log('Ball created at center:', center);
 }
 
 function onXRFrame(t, frame) {
@@ -269,6 +356,73 @@ function onXRFrame(t, frame) {
       renderer.render(scene, camera);
     }
   }
+
+  // Update game elements if the field is created.
+  if (isFieldCreated) {
+    updateBall();
+  }
+}
+
+function updateBall() {
+  if (!ball) return;
+
+  // Move the ball.
+  ball.position.add(ballVelocity);
+
+  // Define field boundaries.
+  const minX = Math.min(
+    vertices[0].x,
+    vertices[1].x,
+    vertices[2].x,
+    vertices[3].x
+  );
+  const maxX = Math.max(
+    vertices[0].x,
+    vertices[1].x,
+    vertices[2].x,
+    vertices[3].x
+  );
+  const minZ = Math.min(
+    vertices[0].z,
+    vertices[1].z,
+    vertices[2].z,
+    vertices[3].z
+  );
+  const maxZ = Math.max(
+    vertices[0].z,
+    vertices[1].z,
+    vertices[2].z,
+    vertices[3].z
+  );
+
+  // Check collision with side walls (X-axis)
+  if (ball.position.x <= minX + 0.01 || ball.position.x >= maxX - 0.01) {
+    ballVelocity.x *= -1;
+    console.log('Ball bounced on X-axis.');
+  }
+
+  // Check collision with front and back walls (Z-axis)
+  if (ball.position.z <= minZ + 0.01 || ball.position.z >= maxZ - 0.01) {
+    ballVelocity.z *= -1;
+    console.log('Ball bounced on Z-axis.');
+  }
+
+  // Check collision with paddles
+  const paddle1Box = new THREE.Box3().setFromObject(paddle1);
+  const paddle2Box = new THREE.Box3().setFromObject(paddle2);
+  const ballBox = new THREE.Box3().setFromObject(ball);
+
+  if (paddle1Box.intersectsBox(ballBox)) {
+    ballVelocity.z *= -1;
+    console.log('Ball hit Paddle 1.');
+  }
+
+  if (paddle2Box.intersectsBox(ballBox)) {
+    ballVelocity.z *= -1;
+    console.log('Ball hit Paddle 2.');
+  }
+
+  // Optional: Implement scoring when the ball goes beyond paddles
 }
 
 initXR();
