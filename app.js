@@ -73,35 +73,36 @@ class App {
   };
 
   createField = () => {
-    const ver1 = this.tapPositions[0];
-    const ver2 = new THREE.Vector3(ver3.x, ver1.y, ver1.z);
-    const ver3 = this.tapPositions[1];
-    const ver4 = new THREE.Vector3(ver1.x, ver3.y, ver3.z);
+    // Ensure there are two tapped positions
+    if (this.tapPositions.length < 2) {
+      console.error('Not enough tap positions to create the field.');
+      return;
+    }
 
-    const geometry = new THREE.BufferGeometry().setFromVertices([
-      ver1,
-      ver2,
-      ver3,
-      ver4,
-    ]);
+    // Define pos1 and pos3 from tap positions
+    const pos1 = this.tapPositions[0]; // First corner
+    const pos3 = this.tapPositions[1]; // Opposite corner
+
+    // Compute the other two corners (pos2 and pos4)
+    const pos2 = new THREE.Vector3(pos3.x, pos1.y, pos1.z);
+    const pos4 = new THREE.Vector3(pos1.x, pos1.y, pos3.z);
+
+    // Array of vertices to form the rectangle
+    const vertices = [pos1, pos2, pos3, pos4, pos1]; // Closing the loop
+
+    // Create geometry from the vertices
+    const geometry = new THREE.BufferGeometry().setFromPoints(vertices);
+
+    // Create a line material
     const material = new THREE.LineBasicMaterial({ color: 0x000000 });
-    const lineSegments = [];
 
-    // Top edge (vertex 1 -> vertex 2)
-    lineSegments.push(new THREE.Line(ver1, ver2, material));
+    // Create a LineLoop to connect the vertices
+    const lineLoop = new THREE.LineLoop(geometry, material);
 
-    // Right edge (vertex 2 -> vertex 3)
-    lineSegments.push(new THREE.Line(ver2, ver3, material));
+    // Add the LineLoop to the scene
+    this.scene.add(lineLoop);
 
-    // Bottom edge (vertex 3 -> vertex 4)
-    lineSegments.push(new THREE.Line(ver3, ver4, material));
-
-    // Left edge (vertex 4 -> vertex 1)
-    lineSegments.push(new THREE.Line(ver4, ver1, material));
-
-    const mesh = new THREE.Mesh(geometry, material);
-    this.scene.add(mesh);
-
+    // Clear tap positions for the next field
     this.tapPositions = [];
   };
 
