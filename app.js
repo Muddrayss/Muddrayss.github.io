@@ -73,33 +73,31 @@ class App {
   };
 
   createField = () => {
-    const vertices = [
-      this.tapPositions[0],
-      new THREE.Vector3(pos3.x, pos1.y, pos1.z),
-      this.tapPositions[1],
-      new THREE.Vector3(pos1.x, pos3.y, pos3.z),
-    ];
+    const ver1 = this.tapPositions[0];
+    const ver2 = new THREE.Vector3(ver3.x, ver1.y, ver1.z);
+    const ver3 = this.tapPositions[1];
+    const ver4 = new THREE.Vector3(ver1.x, ver3.y, ver3.z);
 
     const geometry = new THREE.BufferGeometry().setFromVertices([
-      vertices[0],
-      vertices[1],
-      vertices[2],
-      vertices[3],
+      ver1,
+      ver2,
+      ver3,
+      ver4,
     ]);
     const material = new THREE.LineBasicMaterial({ color: 0x000000 });
     const lineSegments = [];
 
     // Top edge (vertex 1 -> vertex 2)
-    lineSegments.push(new THREE.Line(vertices[0], vertices[1], material));
+    lineSegments.push(new THREE.Line(ver1, ver2, material));
 
     // Right edge (vertex 2 -> vertex 3)
-    lineSegments.push(new THREE.Line(vertices[1], vertices[2], material));
+    lineSegments.push(new THREE.Line(ver2, ver3, material));
 
     // Bottom edge (vertex 3 -> vertex 4)
-    lineSegments.push(new THREE.Line(vertices[2], vertices[3], material));
+    lineSegments.push(new THREE.Line(ver3, ver4, material));
 
     // Left edge (vertex 4 -> vertex 1)
-    lineSegments.push(new THREE.Line(vertices[3], vertices[0], material));
+    lineSegments.push(new THREE.Line(ver4, ver1, material));
 
     const mesh = new THREE.Mesh(geometry, material);
     this.scene.add(mesh);
