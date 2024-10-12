@@ -17,6 +17,7 @@ let vertices = [];
 let field = null;
 let isFieldCreated = false;
 let reticle = null;
+let line = null;
 
 function initXR() {
   if (navigator.xr) {
@@ -99,6 +100,8 @@ function onSessionEnded(event) {
   field = null;
   isFieldCreated = false;
   reticle = null;
+  line = null;
+  document.getElementById('status').innerHTML = '';
 }
 
 function onSelect(event) {
@@ -113,6 +116,8 @@ function onSelect(event) {
     const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
     sphere.position.copy(position);
     scene.add(sphere);
+
+    updateLine();
 
     if (vertices.length === 4) {
       createPongField();
@@ -130,6 +135,7 @@ function setupThreeJS() {
   scene = new THREE.Scene();
 
   camera = new THREE.PerspectiveCamera();
+  scene.add(camera);
 
   // Add a light
   const light = new THREE.DirectionalLight(0xffffff, 1);
@@ -137,7 +143,7 @@ function setupThreeJS() {
   scene.add(light);
 
   // Reticle for hit testing
-  const ringGeometry = new THREE.RingGeometry(0.05, 0.06, 32).rotateX(
+  const ringGeometry = new THREE.RingGeometry(0.05, 0.07, 32).rotateX(
     -Math.PI / 2
   );
   const ringMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
@@ -148,6 +154,12 @@ function setupThreeJS() {
 }
 
 function createPongField() {
+  // Remove the line connecting the vertices
+  if (line) {
+    scene.remove(line);
+    line = null;
+  }
+
   // Create geometry for the field as two triangles (a rectangle)
   const geometry = new THREE.BufferGeometry();
 
@@ -190,6 +202,24 @@ function createPongField() {
   scene.add(field);
 }
 
+function updateLine() {
+  if (line) {
+    scene.remove(line);
+  }
+
+  if (vertices.length > 1) {
+    const points = vertices.slice();
+    if (vertices.length === 4) {
+      points.push(vertices[0]); // Close the loop
+    }
+
+    const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+    const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffff00 });
+    line = new THREE.Line(lineGeometry, lineMaterial);
+    scene.add(line);
+  }
+}
+
 function onXRFrame(t, frame) {
   let session = frame.session;
   session.requestAnimationFrame(onXRFrame);
@@ -205,7 +235,6 @@ function onXRFrame(t, frame) {
     );
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, glLayer.framebuffer);
-
     renderer.clear();
 
     // Update camera matrices.
