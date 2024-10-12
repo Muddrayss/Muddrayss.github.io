@@ -1,78 +1,73 @@
 <!DOCTYPE html>
-<html lang="en">
+<!--
+/*
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+-->
+<html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AR Pong Game</title>
-    <style>
-      body {
-        margin: 0;
-        overflow: hidden;
-        font-family: Arial, sans-serif;
-      }
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      Building an augmented reality application with the WebXR Device API
+    </title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css"
+    />
+    <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
 
-      #enter-ar-info,
-      #unsupported-info {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(255, 255, 255, 0.9);
-        padding: 20px;
-        border-radius: 8px;
-        text-align: center;
-        max-width: 80%;
-      }
+    <!-- three.js -->
+    <script src="https://unpkg.com/three@0.126.0/build/three.js"></script>
+    <script src="https://unpkg.com/three@0.126.0/examples/js/loaders/GLTFLoader.js"></script>
 
-      #unsupported-info {
-        display: none;
-      }
-
-      #enter-ar {
-        display: inline-block;
-        margin-top: 20px;
-        padding: 10px 20px;
-        background-color: #6200ee;
-        color: white;
-        text-decoration: none;
-        border-radius: 4px;
-      }
-
-      #enter-ar:hover {
-        background-color: #3700b3;
-      }
-
-      /* Hide AR-specific elements when not in AR */
-      body.ar #enter-ar-info,
-      body.ar #unsupported-info {
-        display: none;
-      }
-    </style>
+    <link rel="stylesheet" type="text/css" href="../shared/app.css" />
+    <script src="../shared/utils.js"></script>
   </head>
   <body>
-    <!-- AR Entry Information -->
-    <div id="enter-ar-info">
-      <h2>AR Pong Game</h2>
-      <p>Define the Pong field by tapping four times in your AR view.</p>
-      <a id="enter-ar">Start Augmented Reality</a>
+    <div id="enter-ar-info" class="mdc-card demo-card">
+      <h2>Augmented Reality with the WebXR Device API</h2>
+      <p>
+        This is an experiment using augmented reality features with the WebXR
+        Device API. Upon entering AR, you will be surrounded by a world of
+        cubes. Learn more about these features from the
+        <a href="https://codelabs.developers.google.com/codelabs/ar-with-webxr"
+          >Building an augmented reality application with the WebXR Device
+          API</a
+        >
+        Code Lab.
+      </p>
+
+      <!-- Starting an immersive WebXR session requires user interaction. Start the WebXR experience with a simple button. -->
+      <a id="enter-ar" class="mdc-button mdc-button--raised mdc-button--accent">
+        Start augmented reality
+      </a>
     </div>
 
-    <!-- Unsupported Browser Information -->
-    <div id="unsupported-info">
+    <div id="unsupported-info" class="mdc-card demo-card">
       <h2>Unsupported Browser</h2>
       <p>
-        Your browser does not support AR features with WebXR. Please use a
-        compatible browser like Chrome for Android with ARCore support.
+        Your browser does not support AR features with WebXR. Learn more about
+        these features from the
+        <a href="https://codelabs.developers.google.com/codelabs/ar-with-webxr"
+          >Building an augmented reality application with the WebXR Device
+          API</a
+        >
+        Code Lab.
       </p>
     </div>
-
-    <!-- Three.js Library -->
-    <script src="https://unpkg.com/three@0.126.0/build/three.min.js"></script>
-    <!-- GLTFLoader (Optional, if you plan to load models) -->
-    <script src="https://unpkg.com/three@0.126.0/examples/js/loaders/GLTFLoader.js"></script>
-    <!-- WebXR Polyfill (Optional, improves compatibility) -->
-    <script src="https://cdn.jsdelivr.net/npm/webxr-polyfill@latest/build/webxr-polyfill.min.js"></script>
-    <!-- Your App's JavaScript -->
     <script src="app.js"></script>
+    <div id="stabilization"></div>
   </body>
 </html>
