@@ -73,45 +73,36 @@ class App {
   };
 
   createField = () => {
-    const pos1 = this.tapPositions[0];
-    const pos2 = this.tapPositions[1];
+    const vertices = [
+      this.tapPositions[0],
+      new THREE.Vector3(pos3.x, pos1.y, pos1.z),
+      this.tapPositions[1],
+      new THREE.Vector3(pos1.x, pos3.y, pos3.z),
+    ];
 
-    const minX = Math.min(pos1.x, pos2.x);
-    const maxX = Math.max(pos1.x, pos2.x);
-    const minZ = Math.min(pos1.z, pos2.z);
-    const maxZ = Math.max(pos1.z, pos2.z);
-    const avgY = (pos1.y + pos2.y) / 2;
-
-    const v1 = new THREE.Vector3(minX, avgY, minZ);
-    const v2 = new THREE.Vector3(maxX, avgY, minZ);
-    const v3 = new THREE.Vector3(maxX, avgY, maxZ);
-    const v4 = new THREE.Vector3(minX, avgY, maxZ);
-
-    const geometry = new THREE.BufferGeometry().setFromPoints([
-      v1,
-      v2,
-      v3,
-      v4,
-      v1,
+    const geometry = new THREE.BufferGeometry().setFromVertices([
+      vertices[0],
+      vertices[1],
+      vertices[2],
+      vertices[3],
     ]);
-    const material = new THREE.LineBasicMaterial({ color: 0xffffff });
-    const lineLoop = new THREE.LineLoop(geometry, material);
-    this.scene.add(lineLoop);
+    const material = new THREE.LineBasicMaterial({ color: 0x000000 });
+    const lineSegments = [];
 
-    const width = maxX - minX;
-    const height = maxZ - minZ;
-    const planeGeometry = new THREE.PlaneGeometry(width, height);
-    planeGeometry.rotateX(-Math.PI / 2);
-    const planeMaterial = new THREE.MeshBasicMaterial({
-      color: 0x00ff00,
-      side: THREE.DoubleSide,
-    });
-    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    // Top edge (vertex 1 -> vertex 2)
+    lineSegments.push(new THREE.Line(vertices[0], vertices[1], material));
 
-    const centerX = (minX + maxX) / 2;
-    const centerZ = (minZ + maxZ) / 2;
-    plane.position.set(centerX, avgY, centerZ);
-    this.scene.add(plane);
+    // Right edge (vertex 2 -> vertex 3)
+    lineSegments.push(new THREE.Line(vertices[1], vertices[2], material));
+
+    // Bottom edge (vertex 3 -> vertex 4)
+    lineSegments.push(new THREE.Line(vertices[2], vertices[3], material));
+
+    // Left edge (vertex 4 -> vertex 1)
+    lineSegments.push(new THREE.Line(vertices[3], vertices[0], material));
+
+    const mesh = new THREE.Mesh(geometry, material);
+    this.scene.add(mesh);
 
     this.tapPositions = [];
   };
