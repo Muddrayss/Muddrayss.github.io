@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AR Pong Game</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+      }
+
+      #enter-ar-info,
+      #unsupported-info {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(255, 255, 255, 0.9);
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        max-width: 80%;
+      }
+
+      #unsupported-info {
+        display: none;
+      }
+
+      #enter-ar {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 10px 20px;
+        background-color: #6200ee;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+      }
+
+      #enter-ar:hover {
+        background-color: #3700b3;
+      }
+
+      /* Hide AR-specific elements when not in AR */
+      body.ar #enter-ar-info,
+      body.ar #unsupported-info {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- AR Entry Information -->
+    <div id="enter-ar-info">
+      <h2>AR Pong Game</h2>
+      <p>Define the Pong field by tapping four times in your AR view.</p>
+      <a id="enter-ar">Start Augmented Reality</a>
+    </div>
+
+    <!-- Unsupported Browser Information -->
+    <div id="unsupported-info">
+      <h2>Unsupported Browser</h2>
+      <p>
+        Your browser does not support AR features with WebXR. Please use a
+        compatible browser like Chrome for Android with ARCore support.
+      </p>
+    </div>
+
+    <!-- Three.js Library -->
+    <script src="https://unpkg.com/three@0.126.0/build/three.min.js"></script>
+    <!-- GLTFLoader (Optional, if you plan to load models) -->
+    <script src="https://unpkg.com/three@0.126.0/examples/js/loaders/GLTFLoader.js"></script>
+    <!-- WebXR Polyfill (Optional, improves compatibility) -->
+    <script src="https://cdn.jsdelivr.net/npm/webxr-polyfill@latest/build/webxr-polyfill.min.js"></script>
+    <!-- Your App's JavaScript -->
+    <script src="app.js"></script>
+  </body>
+</html>
