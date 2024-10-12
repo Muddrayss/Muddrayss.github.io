@@ -24,20 +24,22 @@ class Reticle extends THREE.Object3D {
     super();
 
     this.loader = new THREE.GLTFLoader();
-    this.loader.load("https://immersive-web.github.io/webxr-samples/media/gltf/reticle/reticle.gltf", (gltf) => {
-      this.add(gltf.scene);
-    })
+    this.loader.load(
+      'https://immersive-web.github.io/webxr-samples/media/gltf/reticle/reticle.gltf',
+      (gltf) => {
+        this.add(gltf.scene);
+      }
+    );
 
     this.visible = false;
   }
 }
 
-window.gltfLoader.load("https://immersive-web.github.io/webxr-samples/media/gltf/sunflower/sunflower.gltf", function(gltf) {
-  const flower = gltf.scene.children.find(c => c.name === 'sunflower')
-  flower.castShadow = true;
-  window.sunflower = gltf.scene;
-});
-
+// window.gltfLoader.load("https://immersive-web.github.io/webxr-samples/media/gltf/sunflower/sunflower.gltf", function(gltf) {
+//   const flower = gltf.scene.children.find(c => c.name === 'sunflower')
+//   flower.castShadow = true;
+//   window.sunflower = gltf.scene;
+// });
 
 window.DemoUtils = {
   /**
@@ -67,10 +69,13 @@ window.DemoUtils = {
 
     // Create a mesh with a shadow material, resulting in a mesh
     // that only renders shadows once we flip the `receiveShadow` property.
-    const shadowMesh = new THREE.Mesh(planeGeometry, new THREE.ShadowMaterial({
-      color: 0x111111,
-      opacity: 0.2,
-    }));
+    const shadowMesh = new THREE.Mesh(
+      planeGeometry,
+      new THREE.ShadowMaterial({
+        color: 0x111111,
+        opacity: 0.2,
+      })
+    );
 
     // Give it a name so we can reference it later, and set `receiveShadow`
     // to true so that it can render our model's shadow.
@@ -100,7 +105,7 @@ window.DemoUtils = {
       new THREE.MeshBasicMaterial({ color: 0x00ff00 }),
       new THREE.MeshBasicMaterial({ color: 0xff00ff }),
       new THREE.MeshBasicMaterial({ color: 0x00ffff }),
-      new THREE.MeshBasicMaterial({ color: 0xffff00 })
+      new THREE.MeshBasicMaterial({ color: 0xffff00 }),
     ];
 
     const ROW_COUNT = 4;
@@ -109,7 +114,10 @@ window.DemoUtils = {
     for (let i = 0; i < ROW_COUNT; i++) {
       for (let j = 0; j < ROW_COUNT; j++) {
         for (let k = 0; k < ROW_COUNT; k++) {
-          const box = new THREE.Mesh(new THREE.BoxBufferGeometry(0.2, 0.2, 0.2), materials);
+          const box = new THREE.Mesh(
+            new THREE.BoxBufferGeometry(0.2, 0.2, 0.2),
+            materials
+          );
           box.position.set(i - HALF, j - HALF, k - HALF);
           box.position.multiplyScalar(SPREAD);
           scene.add(box);
