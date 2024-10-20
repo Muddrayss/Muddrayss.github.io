@@ -84,8 +84,8 @@ class App {
     const pos3 = this.tapPositions[1]; // Opposite corner
 
     // Compute the other two corners (pos2 and pos4)
-    const pos2 = new THREE.Vector3(pos1.x, pos3.y, pos1.z);
-    const pos4 = new THREE.Vector3(pos3.x, pos3.y, pos1.z);
+    const pos2 = new THREE.Vector3(pos3.x, pos1.y, pos1.z);
+    const pos4 = new THREE.Vector3(pos1.x, pos3.y, pos3.z);
 
     // Array of vertices to form the rectangle
     const vertices = [pos1, pos2, pos3, pos4, pos1]; // Closing the loop
@@ -96,7 +96,7 @@ class App {
     // Create a line material
     const material = new THREE.LineBasicMaterial({
       color: 0xffffff,
-      linewidth: 2,
+      linewidth: 10,
     });
 
     // Create a LineLoop to connect the vertices
