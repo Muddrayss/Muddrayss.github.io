@@ -94,7 +94,7 @@ class App {
     const geometry = new THREE.BufferGeometry().setFromPoints(vertices);
 
     // Create a line material
-    const material = new THREE.LineBasicMaterial({ color: 0x000000 });
+    const material = new THREE.LineBasicMaterial({ color: 0xFFFFFF });
 
     // Create a LineLoop to connect the vertices
     const lineLoop = new THREE.LineLoop(geometry, material);
