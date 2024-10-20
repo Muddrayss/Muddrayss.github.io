@@ -83,9 +83,13 @@ class App {
     const pos1 = this.tapPositions[0]; // First corner
     const pos3 = this.tapPositions[1]; // Opposite corner
 
+    console.log('Creating field with corners:', pos1, pos3);
+
     // Compute the other two corners (pos2 and pos4)
     const pos2 = new THREE.Vector3(pos3.x, pos1.y, pos1.z);
     const pos4 = new THREE.Vector3(pos1.x, pos3.y, pos3.z);
+
+    console.log('Computed corners:', pos2, pos4);
 
     // Array of vertices to form the rectangle
     const vertices = [pos1, pos2, pos3, pos4, pos1]; // Closing the loop
