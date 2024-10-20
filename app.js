@@ -73,8 +73,8 @@ class App {
     this.tapPositions.push(position);
 
     if (this.tapPositions.length === 1) {
-      // Capture the device's orientation
-      this.fieldOrientation.copy(this.camera.quaternion);
+      // Capture the field's orientation from the reticle
+      this.fieldOrientation.copy(this.reticle.quaternion);
     }
 
     if (this.tapPositions.length === 2) {
@@ -120,7 +120,7 @@ class App {
       opacity: 0.5,
     });
     const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-    plane.rotateX(-Math.PI / 2); // Make it horizontal
+    // The plane's orientation is handled by the fieldGroup's quaternion
 
     // Create geometry for the field outline
     const vertices = [
@@ -132,10 +132,7 @@ class App {
     ]; // Closing the loop
 
     const geometry = new THREE.BufferGeometry().setFromPoints(vertices);
-    const material = new THREE.LineBasicMaterial({
-      color: 0xffffff,
-      lineWidth: 10,
-    });
+    const material = new THREE.LineBasicMaterial({ color: 0xffffff });
     const lineLoop = new THREE.LineLoop(geometry, material);
 
     // Add the plane and lineLoop to the fieldGroup
@@ -200,7 +197,7 @@ class App {
 
     const framebuffer = this.xrSession.renderState.baseLayer.framebuffer;
     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, framebuffer);
-    this.renderer.setFramebuffer(framebuffer);
+    // Remove deprecated or conflicting methods that might prevent clearing
 
     const pose = frame.getViewerPose(this.localReferenceSpace);
     if (pose) {
@@ -231,12 +228,18 @@ class App {
           hitPose.transform.position.y,
           hitPose.transform.position.z
         );
+        this.reticle.quaternion.set(
+          hitPose.transform.orientation.x,
+          hitPose.transform.orientation.y,
+          hitPose.transform.orientation.z,
+          hitPose.transform.orientation.w
+        );
         this.reticle.updateMatrixWorld(true);
 
         if (!this.fieldCreated) {
           this.planeFloor.visible = true;
           this.planeFloor.position.copy(this.reticle.position);
-          this.planeFloor.quaternion.copy(this.camera.quaternion);
+          this.planeFloor.quaternion.copy(this.reticle.quaternion);
           this.planeFloor.updateMatrixWorld(true);
         } else {
           this.planeFloor.visible = false;
@@ -272,7 +275,7 @@ class App {
         opacity: 0.5,
       })
     );
-    this.planeFloor.rotateX(-Math.PI / 2); // Make it horizontal
+    // No need to rotate the plane floor here; we'll align it with the reticle
     this.planeFloor.visible = false;
     this.scene.add(this.planeFloor);
 
