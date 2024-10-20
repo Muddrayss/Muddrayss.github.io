@@ -79,6 +79,8 @@ class App {
       return;
     }
 
+    return;
+
     // Define pos1 and pos3 from tap positions
     const pos1 = this.tapPositions[0]; // First corner
     const pos3 = this.tapPositions[1]; // Opposite corner
@@ -94,7 +96,7 @@ class App {
     const geometry = new THREE.BufferGeometry().setFromPoints(vertices);
 
     // Create a line material
-    const material = new THREE.LineBasicMaterial({ color: 0xFFFFFF });
+    const material = new THREE.LineBasicMaterial({ color: 0xffffff });
 
     // Create a LineLoop to connect the vertices
     const lineLoop = new THREE.LineLoop(geometry, material);
