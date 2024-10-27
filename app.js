@@ -187,10 +187,12 @@ class App {
         if (!this.fieldCreated) {
           this.planeFloor.visible = true;
           this.planeFloor.position.copy(this.reticle.position);
+          this.planeFloor = new THREE.GridHelper(3, 10, 0x0000ff, 0x0000ff); // 3 units, 10 divisions, blue lines
 
-          // Rotate the quaternion by 90 degrees around the X-axis to make it horizontal
-          const horizontalQuaternion = new THREE.Quaternion();
-          horizontalQuaternion.setFromAxisAngle(
+          // Copy the reticle's orientation and rotate it to align the plane horizontally
+          this.planeFloor.quaternion.copy(this.reticle.quaternion);
+          // Set the plane to be horizontal
+          const horizontalQuaternion = new THREE.Quaternion().setFromAxisAngle(
             new THREE.Vector3(1, 0, 0),
             -Math.PI / 2
           );
@@ -223,10 +225,11 @@ class App {
 
     // Create the plane floor to display until the field is created
     this.planeFloor = new THREE.Mesh(
-      new THREE.PlaneGeometry(1, 1),
+      new THREE.PlaneGeometry(10, 10),
       new THREE.MeshBasicMaterial({
-        color: 0x00ff00,
-        side: THREE.DoubleSide,
+        color: 0x0000ff, // Blue color for the grid lines
+        wireframe: true, // Display it as a wireframe (grid look)
+        side: THREE.DoubleSide, // Make sure both sides are visible
         transparent: true,
         opacity: 0.8,
       })
