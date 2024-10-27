@@ -191,6 +191,11 @@ class App {
           // Rotate the grid to lay horizontally
           this.planeFloor.rotation.x = Math.PI / 2;
           this.planeFloor.updateMatrixWorld(true);
+
+          this.grid.visible = true;
+          this.grid.position.copy(this.reticle.position);
+          this.grid.rotation.x = Math.PI / 2;
+          this.grid.updateMatrixWorld(true);
         } else {
           this.planeFloor.visible = false;
         }
@@ -219,7 +224,8 @@ class App {
     this.planeFloor = new THREE.Mesh(
       new THREE.PlaneGeometry(10, 10),
       new THREE.MeshBasicMaterial({
-        color: 0x0000ff, // Blue color for the grid lines
+        color: 0x72d1e2, // Blue color for the grid lines
+        wireframe: true,
         side: THREE.DoubleSide, // Make sure both sides are visible
         transparent: true,
         opacity: 0.8,
@@ -228,6 +234,10 @@ class App {
     // No need to rotate the plane floor here; we'll align it with the reticle
     this.planeFloor.visible = false;
     this.scene.add(this.planeFloor);
+
+    this.grid = new THREE.GridHelper(10, 10, 0x72d1e2, 0x107ab2); // 10 units, 10 divisions
+    this.grid.visible = false;
+    this.scene.add(this.grid);
 
     this.camera = new THREE.PerspectiveCamera();
     this.camera.matrixAutoUpdate = false;
