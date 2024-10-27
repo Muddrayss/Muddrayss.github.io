@@ -224,10 +224,9 @@ class App {
       new THREE.PlaneGeometry(10, 10),
       new THREE.MeshBasicMaterial({
         color: 0x72d1e2, // Blue color for the grid lines
-        wireframe: true,
         side: THREE.DoubleSide, // Make sure both sides are visible
         transparent: true,
-        opacity: 0.8,
+        opacity: 0.2,
       })
     );
     // No need to rotate the plane floor here; we'll align it with the reticle
