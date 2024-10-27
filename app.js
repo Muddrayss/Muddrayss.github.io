@@ -187,7 +187,7 @@ class App {
         if (!this.fieldCreated) {
           this.planeFloor.visible = true;
           this.planeFloor.position.copy(this.reticle.position);
-          this.planeFloor = new THREE.GridHelper(3, 10, 0x0000ff, 0x0000ff); // 3 units, 10 divisions, blue lines
+          this.planeFloor = new THREE.GridHelper(3, 100, 0x0000cc, 0x0000cc); // 3 units, 10 divisions, blue lines
 
           // Copy the reticle's orientation and rotate it to align the plane horizontally
           this.planeFloor.quaternion.copy(this.reticle.quaternion);
@@ -228,7 +228,6 @@ class App {
       new THREE.PlaneGeometry(10, 10),
       new THREE.MeshBasicMaterial({
         color: 0x0000ff, // Blue color for the grid lines
-        wireframe: true, // Display it as a wireframe (grid look)
         side: THREE.DoubleSide, // Make sure both sides are visible
         transparent: true,
         opacity: 0.8,
