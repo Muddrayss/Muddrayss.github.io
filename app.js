@@ -1,4 +1,6 @@
-const GRID_SIZE = 100;
+const GRID_SIZE = 500;
+
+let shouldUpdateGridPosition = true;
 
 (async function () {
   const isArSessionSupported =
@@ -73,6 +75,7 @@ class App {
         this.scene.remove(scene.children[0]);
       }
       this.fieldCreated = false;
+      shouldUpdateGridPosition = true;
     }
 
     const position = this.reticle.position.clone();
@@ -81,6 +84,7 @@ class App {
     if (this.tapPositions.length === 1) {
       // Capture the field's orientation from the reticle
       this.fieldOrientation.copy(this.reticle.quaternion);
+      shouldUpdateGridPosition = false;
     }
 
     if (this.tapPositions.length === 2) {
@@ -134,7 +138,7 @@ class App {
     fieldGroup.add(lineLoop);
 
     // Add the LineLoop to the scene
-    this.scene.add(fieldGroup);
+    this.scene.add(lineLoop);
 
     // Set fieldCreated to true to prevent further field creation
     this.fieldCreated = true;
@@ -188,13 +192,17 @@ class App {
         this.reticle.updateMatrixWorld(true);
         if (!this.fieldCreated) {
           this.planeFloor.visible = true;
-          // this.planeFloor.position.copy(this.reticle.position);
-          // Rotate the grid to lay horizontally
-          // this.planeFloor.rotation.x = Math.PI / 2;
+          if (shouldUpdateGridPosition) {
+            this.planeFloor.position.copy(this.reticle.position);
+            // Rotate the grid to lay horizontally
+            this.planeFloor.rotation.x = Math.PI / 2;
+          }
           this.planeFloor.updateMatrixWorld(true);
 
           this.grid.visible = true;
-          // this.grid.position.copy(this.reticle.position);
+          if (shouldUpdateGridPosition) {
+            this.grid.position.copy(this.reticle.position);
+          }
           this.grid.updateMatrixWorld(true);
         } else {
           this.planeFloor.visible = false;
@@ -233,8 +241,6 @@ class App {
     );
     // No need to rotate the plane floor here; we'll align it with the reticle
     this.planeFloor.visible = false;
-    this.planeFloor.position.set(0, 0, 0);
-    this.planeFloor.rotation.x = Math.PI / 2;
     this.scene.add(this.planeFloor);
 
     this.grid = new THREE.GridHelper(
@@ -244,7 +250,6 @@ class App {
       0x107ab2
     ); // 10 units, 10 divisions
     this.grid.visible = false;
-    this.grid.position.set(0, 0, 0);
     this.scene.add(this.grid);
 
     this.camera = new THREE.PerspectiveCamera();
