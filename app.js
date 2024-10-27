@@ -67,8 +67,8 @@ class App {
 
   onSelect = () => {
     if (this.fieldCreated) {
-      while (scene.children.length > 0) {
-        scene.remove(scene.children[0]);
+      while (this.scene.children.length > 0) {
+        this.scene.remove(scene.children[0]);
       }
       this.fieldCreated = false;
     }
@@ -127,6 +127,7 @@ class App {
 
     // Create a LineLoop to connect the vertices
     const lineLoop = new THREE.LineLoop(geometry, material);
+    lineLoop.position.set(0, 0.01, 0);
 
     fieldGroup.add(lineLoop);
 
@@ -183,14 +184,14 @@ class App {
         //   hitPose.transform.orientation.w
         // );
         this.reticle.updateMatrixWorld(true);
-        // if (!this.fieldCreated) {
-        //   this.planeFloor.visible = true;
-        //   this.planeFloor.position.copy(this.reticle.position);
-        //   this.planeFloor.quaternion.copy(this.reticle.quaternion);
-        //   this.planeFloor.updateMatrixWorld(true);
-        // } else {
-        //   this.planeFloor.visible = false;
-        // }
+        if (!this.fieldCreated) {
+          this.planeFloor.visible = true;
+          this.planeFloor.position.copy(this.reticle.position);
+          this.planeFloor.quaternion.copy(this.reticle.quaternion);
+          this.planeFloor.updateMatrixWorld(true);
+        } else {
+          this.planeFloor.visible = false;
+        }
       }
 
       this.renderer.render(this.scene, this.camera);
@@ -213,18 +214,18 @@ class App {
     this.scene.add(this.reticle);
 
     // Create the plane floor to display until the field is created
-    // this.planeFloor = new THREE.Mesh(
-    //   new THREE.PlaneGeometry(1, 1),
-    //   new THREE.MeshBasicMaterial({
-    //     color: 0x00ff00,
-    //     side: THREE.DoubleSide,
-    //     transparent: true,
-    //     opacity: 0.5,
-    //   })
-    // );
-    // // No need to rotate the plane floor here; we'll align it with the reticle
-    // this.planeFloor.visible = false;
-    // this.scene.add(this.planeFloor);
+    this.planeFloor = new THREE.Mesh(
+      new THREE.PlaneGeometry(1, 1),
+      new THREE.MeshBasicMaterial({
+        color: 0x00ff00,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.8,
+      })
+    );
+    // No need to rotate the plane floor here; we'll align it with the reticle
+    this.planeFloor.visible = false;
+    this.scene.add(this.planeFloor);
 
     this.camera = new THREE.PerspectiveCamera();
     this.camera.matrixAutoUpdate = false;
