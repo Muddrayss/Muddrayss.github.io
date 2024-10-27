@@ -194,7 +194,6 @@ class App {
 
           this.grid.visible = true;
           this.grid.position.copy(this.reticle.position);
-          this.grid.rotation.x = Math.PI / 2;
           this.grid.updateMatrixWorld(true);
         } else {
           this.planeFloor.visible = false;
