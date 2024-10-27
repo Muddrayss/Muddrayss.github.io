@@ -1,4 +1,4 @@
-const GRID_SIZE = 500;
+const GRID_SIZE = 100;
 
 (async function () {
   const isArSessionSupported =
@@ -190,7 +190,7 @@ class App {
           this.planeFloor.visible = true;
           // this.planeFloor.position.copy(this.reticle.position);
           // Rotate the grid to lay horizontally
-          this.planeFloor.rotation.x = Math.PI / 2;
+          // this.planeFloor.rotation.x = Math.PI / 2;
           this.planeFloor.updateMatrixWorld(true);
 
           this.grid.visible = true;
@@ -233,7 +233,8 @@ class App {
     );
     // No need to rotate the plane floor here; we'll align it with the reticle
     this.planeFloor.visible = false;
-    this.planeFloor.position.copy(this.reticle.position);
+    this.planeFloor.position.set(0, 0, 0);
+    this.planeFloor.rotation.x = Math.PI / 2;
     this.scene.add(this.planeFloor);
 
     this.grid = new THREE.GridHelper(
@@ -243,7 +244,7 @@ class App {
       0x107ab2
     ); // 10 units, 10 divisions
     this.grid.visible = false;
-    this.grid.position.copy(this.reticle.position);
+    this.grid.position.set(0, 0, 0);
     this.scene.add(this.grid);
 
     this.camera = new THREE.PerspectiveCamera();
