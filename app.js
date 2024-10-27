@@ -15,6 +15,8 @@
 class App {
   constructor() {
     this.tapPositions = [];
+    this.fieldCreated = false;
+    this.fieldOrientation = new THREE.Quaternion();
   }
 
   activateXR = async () => {
@@ -64,8 +66,17 @@ class App {
   };
 
   onSelect = () => {
+    // if (this.fieldCreated) {
+    //   return; // Do nothing if the field has been created
+    // }
+
     const position = this.reticle.position.clone();
     this.tapPositions.push(position);
+
+    if (this.tapPositions.length === 1) {
+      // Capture the field's orientation from the reticle
+      this.fieldOrientation.copy(this.reticle.quaternion);
+    }
 
     if (this.tapPositions.length === 2) {
       this.createField();
@@ -89,7 +100,15 @@ class App {
     const pos2 = new THREE.Vector3(pos3.x, pos1.y, pos1.z);
     const pos4 = new THREE.Vector3(pos1.x, pos3.y, pos3.z);
 
-    console.log('Computed corners:', pos2, pos4);
+    // Compute center position
+    const centerX = (pos1.x + pos3.x) / 2;
+    const centerY = (pos1.y + pos3.y) / 2;
+    const centerZ = (pos1.z + pos3.z) / 2;
+
+    // Create a group to hold the field components
+    const fieldGroup = new THREE.Group();
+    fieldGroup.position.set(centerX, centerY, centerZ);
+    fieldGroup.quaternion.copy(this.fieldOrientation);
 
     // Array of vertices to form the rectangle
     const vertices = [pos1, pos2, pos3, pos4, pos1]; // Closing the loop
@@ -106,8 +125,13 @@ class App {
     // Create a LineLoop to connect the vertices
     const lineLoop = new THREE.LineLoop(geometry, material);
 
+    fieldGroup.add(lineLoop);
+
     // Add the LineLoop to the scene
-    this.scene.add(lineLoop);
+    this.scene.add(fieldGroup);
+
+    // Set fieldCreated to true to prevent further field creation
+    this.fieldCreated = true;
 
     // Clear tap positions for the next field
     this.tapPositions = [];
@@ -149,7 +173,21 @@ class App {
           hitPose.transform.position.y,
           hitPose.transform.position.z
         );
+        this.reticle.quaternion.set(
+          hitPose.transform.orientation.x,
+          hitPose.transform.orientation.y,
+          hitPose.transform.orientation.z,
+          hitPose.transform.orientation.w
+        );
         this.reticle.updateMatrixWorld(true);
+        // if (!this.fieldCreated) {
+        //   this.planeFloor.visible = true;
+        //   this.planeFloor.position.copy(this.reticle.position);
+        //   this.planeFloor.quaternion.copy(this.reticle.quaternion);
+        //   this.planeFloor.updateMatrixWorld(true);
+        // } else {
+        //   this.planeFloor.visible = false;
+        // }
       }
 
       this.renderer.render(this.scene, this.camera);
@@ -167,9 +205,23 @@ class App {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-    this.scene = DemoUtils.createLitScene();
+    this.scene = Utils.createLitScene();
     this.reticle = new Reticle();
     this.scene.add(this.reticle);
+
+    // Create the plane floor to display until the field is created
+    // this.planeFloor = new THREE.Mesh(
+    //   new THREE.PlaneGeometry(1, 1),
+    //   new THREE.MeshBasicMaterial({
+    //     color: 0x00ff00,
+    //     side: THREE.DoubleSide,
+    //     transparent: true,
+    //     opacity: 0.5,
+    //   })
+    // );
+    // // No need to rotate the plane floor here; we'll align it with the reticle
+    // this.planeFloor.visible = false;
+    // this.scene.add(this.planeFloor);
 
     this.camera = new THREE.PerspectiveCamera();
     this.camera.matrixAutoUpdate = false;

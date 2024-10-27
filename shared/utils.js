@@ -19,7 +19,7 @@ class Reticle extends THREE.Object3D {
   }
 }
 
-window.DemoUtils = {
+window.Utils = {
   /**
    * Creates a THREE.Scene containing lights that cast shadows,
    * and a mesh that will receive shadows.
