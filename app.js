@@ -188,16 +188,8 @@ class App {
           this.planeFloor.visible = true;
           this.planeFloor.position.copy(this.reticle.position);
           this.planeFloor = new THREE.GridHelper(3, 100, 0x0000cc, 0x0000cc); // 3 units, 10 divisions, blue lines
-
-          // Copy the reticle's orientation and rotate it to align the plane horizontally
-          this.planeFloor.quaternion.copy(this.reticle.quaternion);
-          // Set the plane to be horizontal
-          // const horizontalQuaternion = new THREE.Quaternion().setFromAxisAngle(
-          //   new THREE.Vector3(1, 0, 0),
-          //   -Math.PI / 2
-          // );
-          // this.planeFloor.quaternion.multiply(horizontalQuaternion);
-
+          // Rotate the grid to lay horizontally
+          this.planeFloor.rotation.x = Math.PI / 2;
           this.planeFloor.updateMatrixWorld(true);
         } else {
           this.planeFloor.visible = false;
