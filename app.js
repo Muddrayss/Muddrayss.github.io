@@ -66,9 +66,12 @@ class App {
   };
 
   onSelect = () => {
-    // if (this.fieldCreated) {
-    //   return; // Do nothing if the field has been created
-    // }
+    if (this.fieldCreated) {
+      while (scene.children.length > 0) {
+        scene.remove(scene.children[0]);
+      }
+      this.fieldCreated = false;
+    }
 
     const position = this.reticle.position.clone();
     this.tapPositions.push(position);
@@ -173,12 +176,12 @@ class App {
           hitPose.transform.position.y,
           hitPose.transform.position.z
         );
-        this.reticle.quaternion.set(
-          hitPose.transform.orientation.x,
-          hitPose.transform.orientation.y,
-          hitPose.transform.orientation.z,
-          hitPose.transform.orientation.w
-        );
+        // this.reticle.quaternion.set(
+        //   hitPose.transform.orientation.x,
+        //   hitPose.transform.orientation.y,
+        //   hitPose.transform.orientation.z,
+        //   hitPose.transform.orientation.w
+        // );
         this.reticle.updateMatrixWorld(true);
         // if (!this.fieldCreated) {
         //   this.planeFloor.visible = true;
