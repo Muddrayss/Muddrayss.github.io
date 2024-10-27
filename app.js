@@ -192,11 +192,11 @@ class App {
           // Copy the reticle's orientation and rotate it to align the plane horizontally
           this.planeFloor.quaternion.copy(this.reticle.quaternion);
           // Set the plane to be horizontal
-          const horizontalQuaternion = new THREE.Quaternion().setFromAxisAngle(
-            new THREE.Vector3(1, 0, 0),
-            -Math.PI / 2
-          );
-          this.planeFloor.quaternion.multiply(horizontalQuaternion);
+          // const horizontalQuaternion = new THREE.Quaternion().setFromAxisAngle(
+          //   new THREE.Vector3(1, 0, 0),
+          //   -Math.PI / 2
+          // );
+          // this.planeFloor.quaternion.multiply(horizontalQuaternion);
 
           this.planeFloor.updateMatrixWorld(true);
         } else {
