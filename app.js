@@ -177,17 +177,25 @@ class App {
           hitPose.transform.position.y,
           hitPose.transform.position.z
         );
-        // this.reticle.quaternion.set(
-        //   hitPose.transform.orientation.x,
-        //   hitPose.transform.orientation.y,
-        //   hitPose.transform.orientation.z,
-        //   hitPose.transform.orientation.w
-        // );
+        this.reticle.quaternion.set(
+          hitPose.transform.orientation.x,
+          hitPose.transform.orientation.y,
+          hitPose.transform.orientation.z,
+          hitPose.transform.orientation.w
+        );
         this.reticle.updateMatrixWorld(true);
         if (!this.fieldCreated) {
           this.planeFloor.visible = true;
           this.planeFloor.position.copy(this.reticle.position);
-          this.planeFloor.quaternion.copy(this.reticle.quaternion);
+
+          // Rotate the quaternion by 90 degrees around the X-axis to make it horizontal
+          const horizontalQuaternion = new THREE.Quaternion();
+          horizontalQuaternion.setFromAxisAngle(
+            new THREE.Vector3(1, 0, 0),
+            -Math.PI / 2
+          );
+          this.planeFloor.quaternion.multiply(horizontalQuaternion);
+
           this.planeFloor.updateMatrixWorld(true);
         } else {
           this.planeFloor.visible = false;
