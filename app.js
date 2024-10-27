@@ -1,3 +1,5 @@
+const GRID_SIZE = 500;
+
 (async function () {
   const isArSessionSupported =
     navigator.xr &&
@@ -186,17 +188,17 @@ class App {
         this.reticle.updateMatrixWorld(true);
         if (!this.fieldCreated) {
           this.planeFloor.visible = true;
-          this.planeFloor.position.copy(this.reticle.position);
-          // this.planeFloor = new THREE.GridHelper(3, 100, 0x0000cc, 0x0000cc); // 3 units, 10 divisions, blue lines
+          // this.planeFloor.position.copy(this.reticle.position);
           // Rotate the grid to lay horizontally
           this.planeFloor.rotation.x = Math.PI / 2;
           this.planeFloor.updateMatrixWorld(true);
 
           this.grid.visible = true;
-          this.grid.position.copy(this.reticle.position);
+          // this.grid.position.copy(this.reticle.position);
           this.grid.updateMatrixWorld(true);
         } else {
           this.planeFloor.visible = false;
+          this.grid.visible = false;
         }
       }
 
@@ -221,7 +223,7 @@ class App {
 
     // Create the plane floor to display until the field is created
     this.planeFloor = new THREE.Mesh(
-      new THREE.PlaneGeometry(10, 10),
+      new THREE.PlaneGeometry(GRID_SIZE, GRID_SIZE),
       new THREE.MeshBasicMaterial({
         color: 0x72d1e2, // Blue color for the grid lines
         side: THREE.DoubleSide, // Make sure both sides are visible
@@ -231,10 +233,17 @@ class App {
     );
     // No need to rotate the plane floor here; we'll align it with the reticle
     this.planeFloor.visible = false;
+    this.planeFloor.position.copy(this.reticle.position);
     this.scene.add(this.planeFloor);
 
-    this.grid = new THREE.GridHelper(10, 10, 0x72d1e2, 0x107ab2); // 10 units, 10 divisions
+    this.grid = new THREE.GridHelper(
+      GRID_SIZE,
+      GRID_SIZE * 3,
+      0x72d1e2,
+      0x107ab2
+    ); // 10 units, 10 divisions
     this.grid.visible = false;
+    this.grid.position.copy(this.reticle.position);
     this.scene.add(this.grid);
 
     this.camera = new THREE.PerspectiveCamera();
