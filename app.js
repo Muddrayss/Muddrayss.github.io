@@ -187,7 +187,7 @@ class App {
         if (!this.fieldCreated) {
           this.planeFloor.visible = true;
           this.planeFloor.position.copy(this.reticle.position);
-          this.planeFloor = new THREE.GridHelper(3, 100, 0x0000cc, 0x0000cc); // 3 units, 10 divisions, blue lines
+          // this.planeFloor = new THREE.GridHelper(3, 100, 0x0000cc, 0x0000cc); // 3 units, 10 divisions, blue lines
           // Rotate the grid to lay horizontally
           this.planeFloor.rotation.x = Math.PI / 2;
           this.planeFloor.updateMatrixWorld(true);
