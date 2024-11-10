@@ -191,7 +191,7 @@ class App {
     this.fieldGroup.add(this.ball);
 
     // Add the field group to the scene
-    this.scene.add(this.fieldGroup);
+    this.scene.add(lineLoop);
 
     // Set fieldCreated to true
     this.fieldCreated = true;
