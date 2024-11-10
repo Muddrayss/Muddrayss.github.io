@@ -85,7 +85,7 @@ class App {
   onSelect = () => {
     if (this.fieldCreated) {
       while (this.scene.children.length > 0) {
-        this.scene.remove(scene.children[0]);
+        this.scene.remove(this.scene.children[0]);
       }
       this.fieldCreated = false;
       shouldUpdateGridPosition = true;
@@ -133,8 +133,8 @@ class App {
 
     // Create a group to hold the field components
     this.fieldGroup = new THREE.Group();
-    // this.fieldGroup.position.set(centerX, centerY, centerZ);
-    // this.fieldGroup.quaternion.copy(this.fieldOrientation);
+    this.fieldGroup.position.set(centerX, centerY, centerZ);
+    this.fieldGroup.quaternion.copy(this.fieldOrientation);
 
     // Array of vertices to form the rectangle
     const vertices = [pos1, pos2, pos3, pos4, pos1]; // Closing the loop
@@ -169,7 +169,7 @@ class App {
     this.playerPaddle.position.set(
       0,
       this.paddleHeight / 2,
-      -this.fieldHeight / 2 + paddleDepth
+      -this.fieldHeight / 2 + this.paddleDepth
     );
     this.fieldGroup.add(this.playerPaddle);
 
@@ -178,7 +178,7 @@ class App {
     this.enemyPaddle.position.set(
       0,
       this.paddleHeight / 2,
-      this.fieldHeight / 2 - paddleDepth
+      this.fieldHeight / 2 - this.paddleDepth
     );
     this.fieldGroup.add(this.enemyPaddle);
 
@@ -330,7 +330,7 @@ class App {
 
     // **Collision Detection with Player Paddle**
     if (
-      this.ball.position.z <= -halfFieldHeight + paddleDepth &&
+      this.ball.position.z <= -halfFieldHeight + this.paddleDepth &&
       Math.abs(this.ball.position.x - this.playerPaddle.position.x) <=
         this.paddleWidth / 2
     ) {
@@ -339,7 +339,7 @@ class App {
 
     // **Collision Detection with Enemy Paddle**
     if (
-      this.ball.position.z >= halfFieldHeight - paddleDepth &&
+      this.ball.position.z >= halfFieldHeight - this.paddleDepth &&
       Math.abs(this.ball.position.x - this.enemyPaddle.position.x) <=
         this.paddleWidth / 2
     ) {
