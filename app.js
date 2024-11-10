@@ -21,6 +21,16 @@ class App {
     this.tapPositions = [];
     this.fieldCreated = false;
     this.fieldOrientation = new THREE.Quaternion();
+    this.playerPaddle = null;
+    this.enemyPaddle = null;
+    this.paddleWidth = 0;
+    this.paddleHeight = 0.02;
+    this.paddleDepth = 0.05;
+    this.ball = null;
+    this.ballVelocity = new THREE.Vector3(0.02, 0, 0.02); // Initial ball velocity
+    this.fieldWidth = 0;
+    this.fieldHeight = 0;
+    this.fieldGroup = null;
   }
 
   activateXR = async () => {
@@ -33,6 +43,9 @@ class App {
       this.createXRCanvas();
 
       await this.onSessionStarted();
+
+      this.canvas.addEventListener('touchstart', this.onTouchStart);
+      this.canvas.addEventListener('touchmove', this.onTouchMove);
     } catch (e) {
       console.log(e);
       onNoXRDevice();
@@ -72,7 +85,7 @@ class App {
   onSelect = () => {
     if (this.fieldCreated) {
       while (this.scene.children.length > 0) {
-        this.scene.remove(this.scene.children[0]);
+        this.scene.remove(scene.children[0]);
       }
       this.fieldCreated = false;
       shouldUpdateGridPosition = true;
@@ -100,161 +113,91 @@ class App {
     }
 
     // Define pos1 and pos3 from tap positions
-    const pos1 = this.tapPositions[0]; // First corner (v1)
-    const pos3 = this.tapPositions[1]; // Opposite corner (v3)
+    const pos1 = this.tapPositions[0]; // First corner
+    const pos3 = this.tapPositions[1]; // Opposite corner
+
+    console.log('Creating field with corners:', pos1, pos3);
 
     // Compute the other two corners (pos2 and pos4)
-    const pos2 = new THREE.Vector3(pos3.x, pos1.y, pos1.z); // v2
-    const pos4 = new THREE.Vector3(pos1.x, pos3.y, pos3.z); // v4
+    const pos2 = new THREE.Vector3(pos3.x, pos1.y, pos1.z);
+    const pos4 = new THREE.Vector3(pos1.x, pos3.y, pos3.z);
+
+    // Compute center position
+    const centerX = (pos1.x + pos3.x) / 2;
+    const centerY = (pos1.y + pos3.y) / 2;
+    const centerZ = (pos1.z + pos3.z) / 2;
+
+    // Compute field dimensions
+    this.fieldWidth = Math.abs(pos3.x - pos1.x);
+    this.fieldHeight = Math.abs(pos3.z - pos1.z);
 
     // Create a group to hold the field components
-    const fieldGroup = new THREE.Group();
-    fieldGroup.position.set(0, 0, 0);
-    fieldGroup.quaternion.copy(this.fieldOrientation);
+    this.fieldGroup = new THREE.Group();
+    // this.fieldGroup.position.set(centerX, centerY, centerZ);
+    // this.fieldGroup.quaternion.copy(this.fieldOrientation);
 
-    // Store the vertices in an array
-    const vertices = [pos1, pos2, pos3, pos4];
+    // Array of vertices to form the rectangle
+    const vertices = [pos1, pos2, pos3, pos4, pos1]; // Closing the loop
 
-    // Create an array to hold the line objects
-    this.fieldLines = [];
+    // Create geometry from the vertices
+    const geometry = new THREE.BufferGeometry().setFromPoints(vertices);
 
-    // Create line material
+    // Create a line material
     const material = new THREE.LineBasicMaterial({
       color: 0xffffff,
-      linewidth: 5,
+      linewidth: 10,
     });
 
-    // Create lines for each edge and add them to the fieldGroup
-    for (let i = 0; i < 4; i++) {
-      const start = vertices[i].clone().sub(fieldGroup.position);
-      const end = vertices[(i + 1) % 4].clone().sub(fieldGroup.position);
+    // Create a LineLoop to connect the vertices
+    const lineLoop = new THREE.LineLoop(geometry, material);
+    lineLoop.position.set(0, 0.01, 0);
 
-      // Create geometry with positions at the start vertex
-      const geometry = new THREE.BufferGeometry();
-      const positions = new Float32Array([
-        start.x,
-        start.y,
-        start.z,
-        start.x,
-        start.y,
-        start.z, // Initialize both points at the start
-      ]);
-      geometry.setAttribute(
-        'position',
-        new THREE.BufferAttribute(positions, 3)
-      );
+    this.fieldGroup.add(lineLoop);
 
-      const line = new THREE.Line(geometry, material);
-      line.position.set(0, 0.01, 0); // Relative to fieldGroup
+    // Create Paddles
+    this.paddleWidth = this.fieldWidth * 0.2;
 
-      fieldGroup.add(line);
+    const paddleGeometry = new THREE.BoxGeometry(
+      this.paddleWidth,
+      this.paddleHeight,
+      this.paddleDepth
+    );
+    const paddleMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 
-      this.fieldLines.push({
-        line: line,
-        start: start,
-        end: end,
-      });
-    }
+    // Player Paddle
+    this.playerPaddle = new THREE.Mesh(paddleGeometry, paddleMaterial);
+    this.playerPaddle.position.set(
+      0,
+      this.paddleHeight / 2,
+      -this.fieldHeight / 2 + paddleDepth
+    );
+    this.fieldGroup.add(this.playerPaddle);
 
-    // Add the fieldGroup to the scene
-    this.scene.add(fieldGroup);
+    // Enemy Paddle
+    this.enemyPaddle = new THREE.Mesh(paddleGeometry, paddleMaterial);
+    this.enemyPaddle.position.set(
+      0,
+      this.paddleHeight / 2,
+      this.fieldHeight / 2 - paddleDepth
+    );
+    this.fieldGroup.add(this.enemyPaddle);
 
-    // Set fieldCreated to true to prevent further field creation
+    // Create Ball
+    const ballRadius = 0.03;
+    const ballGeometry = new THREE.SphereGeometry(ballRadius, 16, 16);
+    const ballMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    this.ball = new THREE.Mesh(ballGeometry, ballMaterial);
+    this.ball.position.set(0, ballRadius, 0);
+    this.fieldGroup.add(this.ball);
+
+    // Add the field group to the scene
+    this.scene.add(this.fieldGroup);
+
+    // Set fieldCreated to true
     this.fieldCreated = true;
 
-    // Start the animation
-    this.animateFieldLines();
-
-    // Start fading out the grid
-    this.fadeOutGrid();
-
-    // Clear tap positions for the next field
+    // Clear tap positions
     this.tapPositions = [];
-  };
-
-  animateFieldLines = () => {
-    let lineIndex = 0;
-    const duration = 500; // Duration for each line animation in milliseconds
-
-    const animateNextLine = () => {
-      if (lineIndex >= this.fieldLines.length) {
-        // All lines have been animated
-        return;
-      }
-
-      const { line, start, end } = this.fieldLines[lineIndex];
-      const startTime = performance.now();
-
-      const animateLine = (time) => {
-        const elapsed = time - startTime;
-        const t = Math.min(elapsed / duration, 1);
-
-        // Interpolate the line's end point
-        const currentPoint = new THREE.Vector3().lerpVectors(start, end, t);
-
-        // Update the line geometry
-        const positions = line.geometry.attributes.position.array;
-        positions[0] = start.x;
-        positions[1] = start.y;
-        positions[2] = start.z;
-        positions[3] = currentPoint.x;
-        positions[4] = currentPoint.y;
-        positions[5] = currentPoint.z;
-
-        line.geometry.attributes.position.needsUpdate = true;
-
-        if (t < 1) {
-          // Continue animating
-          requestAnimationFrame(animateLine);
-        } else {
-          // Move to the next line
-          lineIndex++;
-          animateNextLine();
-        }
-      };
-
-      requestAnimationFrame(animateLine);
-    };
-
-    // Start animating the first line
-    animateNextLine();
-  };
-
-  fadeOutGrid = () => {
-    const duration = 1000; // Duration in milliseconds
-    const startTime = performance.now();
-
-    const animateGridFadeOut = (time) => {
-      const elapsed = time - startTime;
-      const t = Math.min(elapsed / duration, 1);
-
-      // Update the grid's material opacity
-      const newOpacity = 1 - t; // Fade from 1 to 0
-
-      if (this.grid.material) {
-        this.grid.material.opacity = newOpacity;
-        this.grid.material.needsUpdate = true;
-      } else if (this.grid.children) {
-        // For GridHelper, which may contain multiple materials
-        this.grid.children.forEach((child) => {
-          if (child.material) {
-            child.material.opacity = newOpacity;
-            child.material.transparent = true;
-            child.material.needsUpdate = true;
-          }
-        });
-      }
-
-      if (t < 1) {
-        // Continue animating
-        requestAnimationFrame(animateGridFadeOut);
-      } else {
-        // Hide the grid after fading out
-        this.grid.visible = false;
-      }
-    };
-
-    requestAnimationFrame(animateGridFadeOut);
   };
 
   onXRFrame = (time, frame) => {
@@ -316,7 +259,9 @@ class App {
           this.grid.updateMatrixWorld(true);
         } else {
           this.planeFloor.visible = false;
-          // Grid visibility is handled in fadeOutGrid()
+          this.grid.visible = false;
+
+          this.updateGame();
         }
       }
 
@@ -327,6 +272,7 @@ class App {
   setupThreeJs() {
     this.renderer = new THREE.WebGLRenderer({
       alpha: true,
+      // Remove 'preserveDrawingBuffer: true' to allow clearing between frames
       canvas: this.canvas,
       context: this.gl,
     });
@@ -348,26 +294,103 @@ class App {
         opacity: 0.2,
       })
     );
-    this.planeFloor.rotation.x = Math.PI / 2;
+    // No need to rotate the plane floor here; we'll align it with the reticle
     this.planeFloor.visible = false;
     this.scene.add(this.planeFloor);
 
-    // Set up the grid with a material that supports transparency
     this.grid = new THREE.GridHelper(
       GRID_SIZE,
       GRID_SIZE * 3,
       0x72d1e2,
       0x107ab2
-    );
-    this.grid.rotation.x = Math.PI / 2;
-    this.grid.material.opacity = 1.0;
-    this.grid.material.transparent = true;
+    ); // 10 units, 10 divisions
     this.grid.visible = false;
     this.scene.add(this.grid);
 
     this.camera = new THREE.PerspectiveCamera();
     this.camera.matrixAutoUpdate = false;
   }
+
+  updateGame = () => {
+    if (!this.fieldCreated) return;
+
+    // Update ball position
+    this.ball.position.add(this.ballVelocity);
+
+    const halfFieldWidth = this.fieldWidth / 2;
+    const halfFieldHeight = this.fieldHeight / 2;
+
+    // **Collision Detection with Side Walls**
+    if (
+      this.ball.position.x <= -halfFieldWidth + 0.05 ||
+      this.ball.position.x >= halfFieldWidth - 0.05
+    ) {
+      this.ballVelocity.x *= -1; // Reverse X direction
+    }
+
+    // **Collision Detection with Player Paddle**
+    if (
+      this.ball.position.z <= -halfFieldHeight + paddleDepth &&
+      Math.abs(this.ball.position.x - this.playerPaddle.position.x) <=
+        this.paddleWidth / 2
+    ) {
+      this.ballVelocity.z *= -1; // Reverse Z direction
+    }
+
+    // **Collision Detection with Enemy Paddle**
+    if (
+      this.ball.position.z >= halfFieldHeight - paddleDepth &&
+      Math.abs(this.ball.position.x - this.enemyPaddle.position.x) <=
+        this.paddleWidth / 2
+    ) {
+      this.ballVelocity.z *= -1; // Reverse Z direction
+    }
+
+    // **Collision with Top and Bottom (Score)**
+    if (
+      this.ball.position.z <= -halfFieldHeight ||
+      this.ball.position.z >= halfFieldHeight
+    ) {
+      // Reset ball position
+      this.ball.position.set(0, this.ball.position.y, 0);
+      // Optionally reset ball velocity or update score
+    }
+
+    // **Enemy Paddle AI**
+    this.enemyPaddle.position.x = THREE.MathUtils.lerp(
+      this.enemyPaddle.position.x,
+      this.ball.position.x,
+      0.05
+    );
+  };
+
+  onTouchStart = (event) => {
+    event.preventDefault();
+  };
+
+  onTouchMove = (event) => {
+    event.preventDefault();
+
+    if (!this.fieldCreated) return;
+
+    const touch = event.touches[0];
+
+    // Convert touch X position to normalized device coordinates (-1 to 1)
+    const ndcX = (touch.clientX / window.innerWidth) * 2 - 1;
+
+    // Map NDC to field coordinates
+    const fieldX = ndcX * (this.fieldWidth / 2);
+
+    // Clamp paddle position within field boundaries
+    const halfFieldWidth = this.fieldWidth / 2;
+    const maxPaddleX = halfFieldWidth - this.paddleWidth / 2;
+
+    this.playerPaddle.position.x = THREE.MathUtils.clamp(
+      fieldX,
+      -maxPaddleX,
+      maxPaddleX
+    );
+  };
 }
 
 window.app = new App();
