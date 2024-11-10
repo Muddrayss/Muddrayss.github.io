@@ -30,7 +30,6 @@ class App {
     this.ballVelocity = new THREE.Vector3(0.02, 0, 0.02);
     this.fieldWidth = 0;
     this.fieldHeight = 0;
-    this.fieldGroup = null;
     this.renderer = null;
     this.scene = null;
     this.camera = null;
@@ -96,7 +95,10 @@ class App {
 
   onSelect = () => {
     if (this.fieldCreated) {
-      this.scene.remove(this.fieldGroup);
+      this.scene.remove(this.playerPaddle);
+      this.scene.remove(this.enemyPaddle);
+      this.scene.remove(this.ball);
+      this.scene.remove(this.lineLoop);
       this.fieldCreated = false;
       shouldUpdateGridPosition = true;
     }
@@ -127,15 +129,11 @@ class App {
     const pos4 = new THREE.Vector3(pos1.x, pos3.y, pos3.z);
 
     const centerX = (pos1.x + pos3.x) / 2;
-    const centerY = (pos1.y + pos3.y) / 2;
+    const centerY = Math.min(pos1.y, pos3.y);
     const centerZ = (pos1.z + pos3.z) / 2;
 
     this.fieldWidth = Math.abs(pos3.x - pos1.x);
     this.fieldHeight = Math.abs(pos3.z - pos1.z);
-
-    this.fieldGroup = new THREE.Group();
-    this.fieldGroup.position.set(centerX, centerY, centerZ);
-    this.fieldGroup.quaternion.copy(this.fieldOrientation);
 
     const vertices = [pos1, pos2, pos3, pos4, pos1];
     const geometry = new THREE.BufferGeometry().setFromPoints(vertices);
@@ -144,10 +142,9 @@ class App {
       linewidth: 10,
     });
 
-    const lineLoop = new THREE.LineLoop(geometry, material);
-    lineLoop.position.set(0, 0.01, 0);
-
-    this.fieldGroup.add(lineLoop);
+    this.lineLoop = new THREE.LineLoop(geometry, material);
+    this.lineLoop.position.set(centerX, centerY, centerZ);
+    this.scene.add(this.lineLoop);
 
     this.paddleWidth = this.fieldWidth * 0.2;
 
@@ -160,28 +157,26 @@ class App {
 
     this.playerPaddle = new THREE.Mesh(paddleGeometry, paddleMaterial);
     this.playerPaddle.position.set(
-      0,
-      this.paddleHeight / 2,
-      -this.fieldHeight / 2 + this.paddleDepth
+      centerX,
+      centerY + this.paddleHeight / 2,
+      centerZ - this.fieldHeight / 2 + this.paddleDepth
     );
-    this.fieldGroup.add(this.playerPaddle);
+    this.scene.add(this.playerPaddle);
 
     this.enemyPaddle = new THREE.Mesh(paddleGeometry, paddleMaterial);
     this.enemyPaddle.position.set(
-      0,
-      this.paddleHeight / 2,
-      this.fieldHeight / 2 - this.paddleDepth
+      centerX,
+      centerY + this.paddleHeight / 2,
+      centerZ + this.fieldHeight / 2 - this.paddleDepth
     );
-    this.fieldGroup.add(this.enemyPaddle);
+    this.scene.add(this.enemyPaddle);
 
     const ballRadius = 0.03;
     const ballGeometry = new THREE.SphereGeometry(ballRadius, 16, 16);
     const ballMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
     this.ball = new THREE.Mesh(ballGeometry, ballMaterial);
-    this.ball.position.set(0, ballRadius, 0);
-    this.fieldGroup.add(this.ball);
-
-    this.scene.add(this.fieldGroup);
+    this.ball.position.set(centerX, centerY + ballRadius, centerZ);
+    this.scene.add(this.ball);
 
     this.fieldCreated = true;
     this.tapPositions = [];
