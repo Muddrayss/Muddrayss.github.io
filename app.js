@@ -129,8 +129,8 @@ class App {
     const pos2 = new THREE.Vector3(pos3.x, pos1.y, pos1.z);
     const pos4 = new THREE.Vector3(pos1.x, pos3.y, pos3.z);
 
-    const centerX = (pos1.x + pos3.x) / 2;
-    const centerY = Math.min(pos1.y, pos3.y);
+    const centerX = (pos1.y + pos3.x) / 2;
+    const centerY = (pos1.x + pos3.y) / 2;
     const centerZ = (pos1.z + pos3.z) / 2;
 
     this.fieldWidth = Math.abs(pos3.x - pos1.x);
@@ -298,14 +298,15 @@ class App {
     const halfFieldHeight = this.fieldHeight / 2;
 
     if (
-      this.ball.position.x <= -halfFieldWidth + 0.05 ||
-      this.ball.position.x >= halfFieldWidth - 0.05
+      this.ball.position.x >= this.centerX + halfFieldWidth - this.ballRadius ||
+      this.ball.position.x <= this.centerX - halfFieldWidth + this.ballRadius
     ) {
       this.ballVelocity.x *= -1;
     }
 
     if (
-      this.ball.position.z <= -halfFieldHeight + this.paddleDepth &&
+      this.ball.position.z >=
+        this.centerZ + halfFieldHeight - this.paddleDepth &&
       Math.abs(this.ball.position.x - this.playerPaddle.position.x) <=
         this.paddleWidth / 2
     ) {
@@ -313,7 +314,8 @@ class App {
     }
 
     if (
-      this.ball.position.z >= halfFieldHeight - this.paddleDepth &&
+      this.ball.position.z <=
+        this.centerZ - halfFieldHeight + this.paddleDepth &&
       Math.abs(this.ball.position.x - this.enemyPaddle.position.x) <=
         this.paddleWidth / 2
     ) {
@@ -321,10 +323,10 @@ class App {
     }
 
     if (
-      this.ball.position.z <= -halfFieldHeight ||
-      this.ball.position.z >= halfFieldHeight
+      this.ball.position.z >= this.centerZ + halfFieldHeight ||
+      this.ball.position.z <= this.centerZ - halfFieldHeight
     ) {
-      this.ball.position.set(0, this.ball.position.y, 0);
+      this.ball.position.set(centerX, centerY + ballRadius, centerZ);
     }
 
     this.enemyPaddle.position.x = THREE.MathUtils.lerp(
@@ -347,9 +349,9 @@ class App {
 
     const ndcX = (touch.clientX / window.innerWidth) * 2 - 1;
 
-    const fieldX = ndcX * (this.fieldWidth / 2);
-
     const halfFieldWidth = this.fieldWidth / 2;
+
+    const fieldX = ndcX * halfFieldWidth;
     const maxPaddleX = halfFieldWidth - this.paddleWidth / 2;
 
     this.playerPaddle.position.x = THREE.MathUtils.clamp(
