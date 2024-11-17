@@ -95,12 +95,13 @@ class App {
 
   onSelect = () => {
     if (this.fieldCreated) {
-      this.scene.remove(this.playerPaddle);
-      this.scene.remove(this.enemyPaddle);
-      this.scene.remove(this.ball);
-      this.scene.remove(this.lineLoop);
-      this.fieldCreated = false;
-      shouldUpdateGridPosition = true;
+      return;
+      // this.scene.remove(this.playerPaddle);
+      // this.scene.remove(this.enemyPaddle);
+      // this.scene.remove(this.ball);
+      // this.scene.remove(this.lineLoop);
+      // this.fieldCreated = false;
+      // shouldUpdateGridPosition = true;
     }
 
     const position = this.reticle.position.clone();
@@ -143,7 +144,7 @@ class App {
     });
 
     this.lineLoop = new THREE.LineLoop(geometry, material);
-    this.lineLoop.position.set(centerX, centerY, centerZ);
+    // this.lineLoop.position.set(centerX, centerY, centerZ);
     this.scene.add(this.lineLoop);
 
     this.paddleWidth = this.fieldWidth * 0.2;
