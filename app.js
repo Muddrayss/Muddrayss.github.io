@@ -23,6 +23,7 @@ class App {
     this.fieldOrientation = new THREE.Quaternion();
     this.playerPaddle = null;
     this.enemyPaddle = null;
+    this.enemyPaddleSpeed = 0;
     this.paddleWidth = 0;
     this.paddleHeight = 0.02;
     this.paddleDepth = 0.05;
@@ -46,6 +47,7 @@ class App {
     this.centerY = 0;
     this.centerZ = 0;
     this.ballRadius = 0.03;
+    this.ghostField = null;
   }
 
   activateXR = async () => {
@@ -114,6 +116,19 @@ class App {
     if (this.tapPositions.length === 1) {
       this.fieldOrientation.copy(this.reticle.quaternion);
       shouldUpdateGridPosition = false;
+
+      // Create ghost field
+      if (!this.ghostField) {
+        const material = new THREE.LineBasicMaterial({
+          color: 0xaaaaaa,
+          linewidth: 5,
+          transparent: true,
+          opacity: 0.5,
+        });
+        const geometry = new THREE.BufferGeometry();
+        this.ghostField = new THREE.LineLoop(geometry, material);
+        this.scene.add(this.ghostField);
+      }
     }
 
     if (this.tapPositions.length === 2) {
@@ -246,6 +261,32 @@ class App {
         );
         this.reticle.updateMatrixWorld(true);
         if (!this.fieldCreated) {
+          if (this.tapPositions.length === 1 && this.ghostField) {
+            const pos1 = this.tapPositions[0];
+            const pos3 = this.reticle.position.clone();
+
+            // Compute other corners
+            const pos2 = new THREE.Vector3(pos3.x, pos1.y, pos1.z);
+            const pos4 = new THREE.Vector3(pos1.x, pos3.y, pos3.z);
+
+            // Array of vertices to form the rectangle
+            const vertices = [pos1, pos2, pos3, pos4, pos1];
+
+            // Update ghost field geometry
+            const positions = new Float32Array(vertices.length * 3);
+            for (let i = 0; i < vertices.length; i++) {
+              positions[i * 3] = vertices[i].x;
+              positions[i * 3 + 1] = vertices[i].y;
+              positions[i * 3 + 2] = vertices[i].z;
+            }
+
+            this.ghostField.geometry.setAttribute(
+              'position',
+              new THREE.BufferAttribute(positions, 3)
+            );
+            this.ghostField.geometry.attributes.position.needsUpdate = true;
+          }
+
           this.planeFloor.visible = true;
           if (shouldUpdateGridPosition) {
             this.planeFloor.position.copy(this.reticle.position);
@@ -262,6 +303,13 @@ class App {
           this.planeFloor.visible = false;
           this.grid.visible = false;
           this.reticle.visible = false;
+          this.ghostField.visible = false;
+          // if (this.ghostField) {
+          //   this.scene.remove(this.ghostField);
+          //   this.ghostField.geometry.dispose();
+          //   this.ghostField.material.dispose();
+          //   this.ghostField = null;
+          // }
 
           this.updateGame();
         }
@@ -361,11 +409,14 @@ class App {
     }
 
     // Enemy paddle AI
-    this.enemyPaddle.position.x = THREE.MathUtils.lerp(
-      this.enemyPaddle.position.x,
-      this.ball.position.x,
-      0.05
-    );
+    const deltaX = this.ball.position.x - this.enemyPaddle.position.x;
+    const maxMovement = this.enemyPaddleSpeed;
+
+    if (Math.abs(deltaX) > maxMovement) {
+      this.enemyPaddle.position.x += Math.sign(deltaX) * maxMovement;
+    } else {
+      this.enemyPaddle.position.x = this.ball.position.x;
+    }
 
     // Clamp enemy paddle within field boundaries
     const maxPaddleX = halfFieldWidth - this.paddleWidth / 2;
