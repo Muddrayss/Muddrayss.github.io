@@ -121,7 +121,7 @@ class App {
       if (!this.ghostField) {
         const material = new THREE.LineBasicMaterial({
           color: 0xaaaaaa,
-          linewidth: 5,
+          linewidth: 10,
           transparent: true,
           opacity: 0.5,
         });
