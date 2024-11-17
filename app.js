@@ -261,6 +261,7 @@ class App {
         } else {
           this.planeFloor.visible = false;
           this.grid.visible = false;
+          this.reticle.visible = false;
 
           this.updateGame();
         }
