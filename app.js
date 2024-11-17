@@ -42,6 +42,10 @@ class App {
     this.viewerSpace = null;
     this.hitTestSource = null;
     this.stabilized = false;
+    this.centerX = 0;
+    this.centerY = 0;
+    this.centerZ = 0;
+    this.ballRadius = 0.03;
   }
 
   activateXR = async () => {
@@ -126,16 +130,25 @@ class App {
     const pos1 = this.tapPositions[0];
     const pos3 = this.tapPositions[1];
 
+    // Compute other corners
     const pos2 = new THREE.Vector3(pos3.x, pos1.y, pos1.z);
     const pos4 = new THREE.Vector3(pos1.x, pos3.y, pos3.z);
 
-    const centerX = (pos1.y + pos3.x) / 2;
-    const centerY = (pos1.x + pos3.y) / 2;
+    // Compute center position
+    const centerX = (pos1.x + pos3.x) / 2;
+    const centerY = (pos1.y + pos3.y) / 2;
     const centerZ = (pos1.z + pos3.z) / 2;
 
+    // Save center positions
+    this.centerX = centerX;
+    this.centerY = centerY;
+    this.centerZ = centerZ;
+
+    // Compute field dimensions
     this.fieldWidth = Math.abs(pos3.x - pos1.x);
     this.fieldHeight = Math.abs(pos3.z - pos1.z);
 
+    // Create field lines
     const vertices = [pos1, pos2, pos3, pos4, pos1];
     const geometry = new THREE.BufferGeometry().setFromPoints(vertices);
     const material = new THREE.LineBasicMaterial({
@@ -144,9 +157,9 @@ class App {
     });
 
     this.lineLoop = new THREE.LineLoop(geometry, material);
-    // this.lineLoop.position.set(centerX, centerY, centerZ);
     this.scene.add(this.lineLoop);
 
+    // Set paddle dimensions
     this.paddleWidth = this.fieldWidth * 0.2;
 
     const paddleGeometry = new THREE.BoxGeometry(
@@ -156,27 +169,34 @@ class App {
     );
     const paddleMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 
+    // Player Paddle
     this.playerPaddle = new THREE.Mesh(paddleGeometry, paddleMaterial);
     this.playerPaddle.position.set(
-      centerX,
-      centerY + this.paddleHeight / 2,
-      centerZ - this.fieldHeight / 2 + this.paddleDepth
+      this.centerX,
+      this.centerY + this.paddleHeight / 2,
+      this.centerZ - this.fieldHeight / 2 + this.paddleDepth
     );
     this.scene.add(this.playerPaddle);
 
+    // Enemy Paddle
     this.enemyPaddle = new THREE.Mesh(paddleGeometry, paddleMaterial);
     this.enemyPaddle.position.set(
-      centerX,
-      centerY + this.paddleHeight / 2,
-      centerZ + this.fieldHeight / 2 - this.paddleDepth
+      this.centerX,
+      this.centerY + this.paddleHeight / 2,
+      this.centerZ + this.fieldHeight / 2 - this.paddleDepth
     );
     this.scene.add(this.enemyPaddle);
 
-    const ballRadius = 0.03;
-    const ballGeometry = new THREE.SphereGeometry(ballRadius, 16, 16);
+    // Ball
+    this.ballRadius = 0.03; // Save ball radius as a class property
+    const ballGeometry = new THREE.SphereGeometry(this.ballRadius, 16, 16);
     const ballMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
     this.ball = new THREE.Mesh(ballGeometry, ballMaterial);
-    this.ball.position.set(centerX, centerY + ballRadius, centerZ);
+    this.ball.position.set(
+      this.centerX,
+      this.centerY + this.ballRadius,
+      this.centerZ
+    );
     this.scene.add(this.ball);
 
     this.fieldCreated = true;
@@ -292,11 +312,13 @@ class App {
   updateGame = () => {
     if (!this.fieldCreated) return;
 
+    // Update ball position
     this.ball.position.add(this.ballVelocity);
 
     const halfFieldWidth = this.fieldWidth / 2;
     const halfFieldHeight = this.fieldHeight / 2;
 
+    // Collision with side walls
     if (
       this.ball.position.x >= this.centerX + halfFieldWidth - this.ballRadius ||
       this.ball.position.x <= this.centerX - halfFieldWidth + this.ballRadius
@@ -304,35 +326,52 @@ class App {
       this.ballVelocity.x *= -1;
     }
 
+    // Collision with player paddle
     if (
-      this.ball.position.z >=
-        this.centerZ + halfFieldHeight - this.paddleDepth &&
+      this.ball.position.z <=
+        this.centerZ - halfFieldHeight + this.paddleDepth &&
       Math.abs(this.ball.position.x - this.playerPaddle.position.x) <=
         this.paddleWidth / 2
     ) {
       this.ballVelocity.z *= -1;
     }
 
+    // Collision with enemy paddle
     if (
-      this.ball.position.z <=
-        this.centerZ - halfFieldHeight + this.paddleDepth &&
+      this.ball.position.z >=
+        this.centerZ + halfFieldHeight - this.paddleDepth &&
       Math.abs(this.ball.position.x - this.enemyPaddle.position.x) <=
         this.paddleWidth / 2
     ) {
       this.ballVelocity.z *= -1;
     }
 
+    // Ball goes out of bounds (score)
     if (
-      this.ball.position.z >= this.centerZ + halfFieldHeight ||
-      this.ball.position.z <= this.centerZ - halfFieldHeight
+      this.ball.position.z <= this.centerZ - halfFieldHeight ||
+      this.ball.position.z >= this.centerZ + halfFieldHeight
     ) {
-      this.ball.position.set(centerX, centerY + ballRadius, centerZ);
+      // Reset ball position
+      this.ball.position.set(
+        this.centerX,
+        this.centerY + this.ballRadius,
+        this.centerZ
+      );
     }
 
+    // Enemy paddle AI
     this.enemyPaddle.position.x = THREE.MathUtils.lerp(
       this.enemyPaddle.position.x,
       this.ball.position.x,
       0.05
+    );
+
+    // Clamp enemy paddle within field boundaries
+    const maxPaddleX = halfFieldWidth - this.paddleWidth / 2;
+    this.enemyPaddle.position.x = THREE.MathUtils.clamp(
+      this.enemyPaddle.position.x,
+      this.centerX - maxPaddleX,
+      this.centerX + maxPaddleX
     );
   };
 
@@ -347,17 +386,20 @@ class App {
 
     const touch = event.touches[0];
 
+    // Convert touch X position to normalized device coordinates (-1 to 1)
     const ndcX = (touch.clientX / window.innerWidth) * 2 - 1;
 
     const halfFieldWidth = this.fieldWidth / 2;
 
-    const fieldX = ndcX * halfFieldWidth;
+    // Map NDC to field coordinates relative to centerX
+    const fieldX = ndcX * halfFieldWidth + this.centerX;
+
     const maxPaddleX = halfFieldWidth - this.paddleWidth / 2;
 
     this.playerPaddle.position.x = THREE.MathUtils.clamp(
       fieldX,
-      -maxPaddleX,
-      maxPaddleX
+      this.centerX - maxPaddleX,
+      this.centerX + maxPaddleX
     );
   };
 }
