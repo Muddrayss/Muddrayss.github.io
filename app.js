@@ -119,7 +119,7 @@ class App {
       // Create ghost field
       if (!this.ghostField) {
         const material = new THREE.LineBasicMaterial({
-          color: 0xaaaaaa,
+          color: 0xe1341e,
           linewidth: 10,
           transparent: true,
           opacity: 0.5,
@@ -143,6 +143,14 @@ class App {
 
     const pos1 = this.tapPositions[0];
     const pos3 = this.tapPositions[1];
+
+    // Remove ghost field
+    if (this.ghostField) {
+      this.scene.remove(this.ghostField);
+      this.ghostField.geometry.dispose();
+      this.ghostField.material.dispose();
+      this.ghostField = null;
+    }
 
     // Compute other corners
     const pos2 = new THREE.Vector3(pos3.x, pos1.y, pos1.z);
@@ -188,9 +196,22 @@ class App {
     // Set paddle dimensions
     this.paddleWidth = this.fieldWidth * 0.2;
 
-    // Create paddles and ball relative to fieldGroup
+    // **Define paddle geometry and material**
+    const paddleGeometry = new THREE.BoxGeometry(
+      this.paddleWidth,
+      this.paddleHeight,
+      this.paddleDepth
+    );
+    const playerPaddleMaterial = new THREE.MeshBasicMaterial({
+      color: 0x50af61,
+    });
+    const enemyPaddleMaterial = new THREE.MeshBasicMaterial({
+      color: 0xe01f26,
+    });
+
+    // Create paddles relative to fieldGroup
     // Player Paddle
-    this.playerPaddle = new THREE.Mesh(paddleGeometry, paddleMaterial);
+    this.playerPaddle = new THREE.Mesh(paddleGeometry, playerPaddleMaterial);
     this.playerPaddle.position.set(
       0,
       this.paddleHeight / 2,
@@ -199,13 +220,18 @@ class App {
     this.fieldGroup.add(this.playerPaddle);
 
     // Enemy Paddle
-    this.enemyPaddle = new THREE.Mesh(paddleGeometry, paddleMaterial);
+    this.enemyPaddle = new THREE.Mesh(paddleGeometry, enemyPaddleMaterial);
     this.enemyPaddle.position.set(
       0,
       this.paddleHeight / 2,
       this.fieldHeight / 2 - this.paddleDepth / 2
     );
     this.fieldGroup.add(this.enemyPaddle);
+
+    // **Define ball geometry and material**
+    this.ballRadius = 0.03; // Save ball radius as a class property
+    const ballGeometry = new THREE.SphereGeometry(this.ballRadius, 16, 16);
+    const ballMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
     // Ball
     this.ball = new THREE.Mesh(ballGeometry, ballMaterial);
