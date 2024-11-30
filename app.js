@@ -116,7 +116,6 @@ class App {
     if (this.tapPositions.length === 1) {
       this.fieldOrientation.copy(this.reticle.quaternion);
       shouldUpdateGridPosition = false;
-      this.camera.matrixAutoUpdate = false;
 
       // Create ghost field
       if (!this.ghostField) {
@@ -357,7 +356,7 @@ class App {
     this.scene.add(this.grid);
 
     this.camera = new THREE.PerspectiveCamera();
-    this.camera.matrixAutoUpdate = true;
+    this.camera.matrixAutoUpdate = false;
   }
 
   updateGame = () => {
