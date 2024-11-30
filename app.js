@@ -23,7 +23,7 @@ class App {
     this.fieldOrientation = new THREE.Quaternion();
     this.playerPaddle = null;
     this.enemyPaddle = null;
-    this.enemyPaddleSpeed = 10;
+    this.enemyPaddleSpeed = 7;
     this.paddleWidth = 0;
     this.paddleHeight = 0.02;
     this.paddleDepth = 0.05;
@@ -116,6 +116,7 @@ class App {
     if (this.tapPositions.length === 1) {
       this.fieldOrientation.copy(this.reticle.quaternion);
       shouldUpdateGridPosition = false;
+      this.camera.matrixAutoUpdate = false;
 
       // Create ghost field
       if (!this.ghostField) {
@@ -297,6 +298,7 @@ class App {
           this.grid.visible = true;
           if (shouldUpdateGridPosition) {
             this.grid.position.copy(this.reticle.position);
+            this.grid.rotation.x = Math.PI / 2;
           }
           this.grid.updateMatrixWorld(true);
         } else {
@@ -355,7 +357,7 @@ class App {
     this.scene.add(this.grid);
 
     this.camera = new THREE.PerspectiveCamera();
-    this.camera.matrixAutoUpdate = false;
+    this.camera.matrixAutoUpdate = true;
   }
 
   updateGame = () => {
@@ -378,7 +380,7 @@ class App {
     // Collision with player paddle
     if (
       this.ball.position.z <=
-        this.centerZ - halfFieldHeight + this.paddleDepth &&
+        this.centerZ - halfFieldHeight - this.paddleDepth &&
       Math.abs(this.ball.position.x - this.playerPaddle.position.x) <=
         this.paddleWidth / 2
     ) {
@@ -388,7 +390,7 @@ class App {
     // Collision with enemy paddle
     if (
       this.ball.position.z >=
-        this.centerZ + halfFieldHeight - this.paddleDepth &&
+        this.centerZ + halfFieldHeight + this.paddleDepth &&
       Math.abs(this.ball.position.x - this.enemyPaddle.position.x) <=
         this.paddleWidth / 2
     ) {
