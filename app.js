@@ -162,8 +162,20 @@ class App {
     this.fieldWidth = Math.abs(pos3.x - pos1.x);
     this.fieldHeight = Math.abs(pos3.z - pos1.z);
 
+    // Create field group
+    this.fieldGroup = new THREE.Group();
+    this.fieldGroup.position.set(centerX, centerY, centerZ);
+    this.fieldGroup.quaternion.copy(this.fieldOrientation);
+    this.scene.add(this.fieldGroup);
+
     // Create field lines
-    const vertices = [pos1, pos2, pos3, pos4, pos1];
+    const vertices = [
+      new THREE.Vector3(pos1.x - centerX, 0, pos1.z - centerZ),
+      new THREE.Vector3(pos2.x - centerX, 0, pos2.z - centerZ),
+      new THREE.Vector3(pos3.x - centerX, 0, pos3.z - centerZ),
+      new THREE.Vector3(pos4.x - centerX, 0, pos4.z - centerZ),
+      new THREE.Vector3(pos1.x - centerX, 0, pos1.z - centerZ),
+    ];
     const geometry = new THREE.BufferGeometry().setFromPoints(vertices);
     const material = new THREE.LineBasicMaterial({
       color: 0xffffff,
@@ -171,47 +183,34 @@ class App {
     });
 
     this.lineLoop = new THREE.LineLoop(geometry, material);
-    this.scene.add(this.lineLoop);
+    this.fieldGroup.add(this.lineLoop);
 
     // Set paddle dimensions
     this.paddleWidth = this.fieldWidth * 0.2;
 
-    const paddleGeometry = new THREE.BoxGeometry(
-      this.paddleWidth,
-      this.paddleHeight,
-      this.paddleDepth
-    );
-    const paddleMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-
+    // Create paddles and ball relative to fieldGroup
     // Player Paddle
     this.playerPaddle = new THREE.Mesh(paddleGeometry, paddleMaterial);
     this.playerPaddle.position.set(
-      this.centerX,
-      this.centerY + this.paddleHeight / 2,
-      this.centerZ + this.fieldHeight / 2 - this.paddleDepth / 2
+      0,
+      this.paddleHeight / 2,
+      -this.fieldHeight / 2 + this.paddleDepth / 2
     );
-    this.scene.add(this.playerPaddle);
+    this.fieldGroup.add(this.playerPaddle);
 
     // Enemy Paddle
     this.enemyPaddle = new THREE.Mesh(paddleGeometry, paddleMaterial);
     this.enemyPaddle.position.set(
-      this.centerX,
-      this.centerY + this.paddleHeight / 2,
-      this.centerZ - this.fieldHeight / 2 + this.paddleDepth / 2
+      0,
+      this.paddleHeight / 2,
+      this.fieldHeight / 2 - this.paddleDepth / 2
     );
-    this.scene.add(this.enemyPaddle);
+    this.fieldGroup.add(this.enemyPaddle);
 
     // Ball
-    this.ballRadius = 0.03; // Save ball radius as a class property
-    const ballGeometry = new THREE.SphereGeometry(this.ballRadius, 16, 16);
-    const ballMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
     this.ball = new THREE.Mesh(ballGeometry, ballMaterial);
-    this.ball.position.set(
-      this.centerX,
-      this.centerY + this.ballRadius,
-      this.centerZ
-    );
-    this.scene.add(this.ball);
+    this.ball.position.set(0, this.ballRadius, 0);
+    this.fieldGroup.add(this.ball);
 
     this.fieldCreated = true;
     this.tapPositions = [];
@@ -289,6 +288,7 @@ class App {
           this.grid.visible = true;
           if (shouldUpdateGridPosition) {
             this.grid.position.copy(this.reticle.position);
+            this.grid.quaternion.copy(this.reticle.quaternion);
           }
           this.grid.updateMatrixWorld(true);
         } else {
@@ -348,16 +348,15 @@ class App {
 
     // Collision with side walls
     if (
-      this.ball.position.x >= this.centerX + halfFieldWidth - this.ballRadius ||
-      this.ball.position.x <= this.centerX - halfFieldWidth + this.ballRadius
+      this.ball.position.x >= halfFieldWidth - this.ballRadius ||
+      this.ball.position.x <= -halfFieldWidth + this.ballRadius
     ) {
       this.ballVelocity.x *= -1;
     }
 
     // Collision with player paddle
     if (
-      this.ball.position.z <=
-        this.centerZ + halfFieldHeight - this.paddleDepth &&
+      this.ball.position.z <= -halfFieldHeight + this.paddleDepth &&
       Math.abs(this.ball.position.x - this.playerPaddle.position.x) <=
         this.paddleWidth / 2
     ) {
@@ -366,8 +365,7 @@ class App {
 
     // Collision with enemy paddle
     if (
-      this.ball.position.z >=
-        this.centerZ - halfFieldHeight + this.paddleDepth &&
+      this.ball.position.z >= halfFieldHeight - this.paddleDepth &&
       Math.abs(this.ball.position.x - this.enemyPaddle.position.x) <=
         this.paddleWidth / 2
     ) {
@@ -376,15 +374,11 @@ class App {
 
     // Ball goes out of bounds (score)
     if (
-      this.ball.position.z <= this.centerZ - halfFieldHeight ||
-      this.ball.position.z >= this.centerZ + halfFieldHeight
+      this.ball.position.z <= -halfFieldHeight ||
+      this.ball.position.z >= halfFieldHeight
     ) {
       // Reset ball position
-      this.ball.position.set(
-        this.centerX,
-        this.centerY + this.ballRadius,
-        this.centerZ
-      );
+      this.ball.position.set(0, this.ballRadius, 0);
     }
 
     // Enemy paddle AI
@@ -401,8 +395,8 @@ class App {
     const maxPaddleX = halfFieldWidth - this.paddleWidth / 2;
     this.enemyPaddle.position.x = THREE.MathUtils.clamp(
       this.enemyPaddle.position.x,
-      this.centerX - maxPaddleX,
-      this.centerX + maxPaddleX
+      -maxPaddleX,
+      maxPaddleX
     );
   };
 
@@ -422,14 +416,14 @@ class App {
 
     const halfFieldWidth = this.fieldWidth / 2;
 
-    // Map NDC to field coordinates relative to centerX
-    const fieldX = ndcX * halfFieldWidth + this.centerX;
+    // Map NDC to field coordinates
+    const fieldX = ndcX * halfFieldWidth;
 
     const maxPaddleX = halfFieldWidth - this.paddleWidth / 2;
     this.playerPaddle.position.x = THREE.MathUtils.clamp(
       fieldX,
-      this.centerX - maxPaddleX,
-      this.centerX + maxPaddleX
+      -maxPaddleX,
+      maxPaddleX
     );
   };
 }
