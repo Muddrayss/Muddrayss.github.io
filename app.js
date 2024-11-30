@@ -188,7 +188,7 @@ class App {
     this.playerPaddle.position.set(
       this.centerX,
       this.centerY + this.paddleHeight / 2,
-      this.centerZ + this.fieldHeight / 2 + this.paddleDepth
+      this.centerZ + this.fieldHeight / 2 - this.paddleDepth / 2
     );
     this.scene.add(this.playerPaddle);
 
@@ -197,7 +197,7 @@ class App {
     this.enemyPaddle.position.set(
       this.centerX,
       this.centerY + this.paddleHeight / 2,
-      this.centerZ - this.fieldHeight / 2 - this.paddleDepth
+      this.centerZ - this.fieldHeight / 2 + this.paddleDepth / 2
     );
     this.scene.add(this.enemyPaddle);
 
@@ -357,7 +357,7 @@ class App {
     // Collision with player paddle
     if (
       this.ball.position.z <=
-        this.centerZ - halfFieldHeight + this.paddleDepth &&
+        this.centerZ + halfFieldHeight - this.paddleDepth &&
       Math.abs(this.ball.position.x - this.playerPaddle.position.x) <=
         this.paddleWidth / 2
     ) {
@@ -367,7 +367,7 @@ class App {
     // Collision with enemy paddle
     if (
       this.ball.position.z >=
-        this.centerZ + halfFieldHeight - this.paddleDepth &&
+        this.centerZ - halfFieldHeight + this.paddleDepth &&
       Math.abs(this.ball.position.x - this.enemyPaddle.position.x) <=
         this.paddleWidth / 2
     ) {
