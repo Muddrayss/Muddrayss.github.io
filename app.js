@@ -23,7 +23,7 @@ class App {
     this.fieldOrientation = new THREE.Quaternion();
     this.playerPaddle = null;
     this.enemyPaddle = null;
-    this.enemyPaddleSpeed = 0;
+    this.enemyPaddleSpeed = 10;
     this.paddleWidth = 0;
     this.paddleHeight = 0.02;
     this.paddleDepth = 0.05;
@@ -447,7 +447,6 @@ class App {
     const fieldX = ndcX * halfFieldWidth + this.centerX;
 
     const maxPaddleX = halfFieldWidth - this.paddleWidth / 2;
-
     this.playerPaddle.position.x = THREE.MathUtils.clamp(
       fieldX,
       this.centerX - maxPaddleX,
