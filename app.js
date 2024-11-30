@@ -35,7 +35,6 @@ class App {
     this.scene = null;
     this.camera = null;
     this.reticle = null;
-    this.planeFloor = null;
     this.grid = null;
     this.xrSession = null;
     this.gl = null;
@@ -287,21 +286,12 @@ class App {
             this.ghostField.geometry.attributes.position.needsUpdate = true;
           }
 
-          this.planeFloor.visible = true;
-          if (shouldUpdateGridPosition) {
-            this.planeFloor.position.copy(this.reticle.position);
-            this.planeFloor.rotation.x = Math.PI / 2;
-          }
-          this.planeFloor.updateMatrixWorld(true);
-
           this.grid.visible = true;
           if (shouldUpdateGridPosition) {
             this.grid.position.copy(this.reticle.position);
-            this.grid.rotation.x = Math.PI / 2;
           }
           this.grid.updateMatrixWorld(true);
         } else {
-          this.planeFloor.visible = false;
           this.grid.visible = false;
           this.reticle.visible = false;
           this.ghostField.visible = false;
@@ -333,18 +323,6 @@ class App {
     this.scene = Utils.createLitScene();
     this.reticle = new Reticle();
     this.scene.add(this.reticle);
-
-    this.planeFloor = new THREE.Mesh(
-      new THREE.PlaneGeometry(GRID_SIZE, GRID_SIZE),
-      new THREE.MeshBasicMaterial({
-        color: 0x72d1e2,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.2,
-      })
-    );
-    this.planeFloor.visible = false;
-    this.scene.add(this.planeFloor);
 
     this.grid = new THREE.GridHelper(
       GRID_SIZE,
