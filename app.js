@@ -47,7 +47,6 @@ class App {
     this.centerZ = 0;
     this.ballRadius = 0.03;
     this.ghostField = null;
-    this.ghostFieldGroup = new THREE.Group();
   }
 
   activateXR = async () => {
@@ -127,11 +126,7 @@ class App {
         });
         const geometry = new THREE.BufferGeometry();
         this.ghostField = new THREE.LineLoop(geometry, material);
-        this.ghostFieldGroup.position.copy(position);
-        this.ghostFieldGroup.quaternion.copy(this.fieldOrientation);
-        this.ghostFieldGroup.add(this.ghostField);
-
-        this.scene.add(this.ghostFieldGroup);
+        this.scene.add(this.ghostField);
       }
     }
 
@@ -298,17 +293,8 @@ class App {
             const pos2 = new THREE.Vector3(pos3.x, pos1.y, pos1.z);
             const pos4 = new THREE.Vector3(pos1.x, pos3.y, pos3.z);
 
-            const localPos1 = new THREE.Vector3(0, 0, 0); // pos1 is our origin
-            const localPos2 = pos2.clone().sub(pos1);
-            const localPos3 = pos3.clone().sub(pos1);
-            const localPos4 = pos4.clone().sub(pos1);
-            const vertices = [
-              localPos1,
-              localPos2,
-              localPos3,
-              localPos4,
-              localPos1,
-            ];
+            // Array of vertices to form the rectangle
+            const vertices = [pos1, pos2, pos3, pos4, pos1];
 
             // Update ghost field geometry
             const positions = new Float32Array(vertices.length * 3);
