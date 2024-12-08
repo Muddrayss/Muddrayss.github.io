@@ -291,6 +291,7 @@ class App {
         this.reticle.updateMatrixWorld(true);
         if (!this.fieldCreated) {
           if (this.tapPositions.length === 1 && this.ghostField) {
+            const pos1 = this.tapPositions[0];
             const pos3 = this.reticle.position.clone();
 
             // Compute other corners
