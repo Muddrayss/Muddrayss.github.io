@@ -21,7 +21,6 @@ class App {
     this.tapPositions = [];
     this.fieldCreated = false;
     this.fieldOrientation = new THREE.Quaternion();
-    this.firstTapPosition = null;
     this.playerPaddle = null;
     this.enemyPaddle = null;
     this.enemyPaddleSpeed = 7;
@@ -88,6 +87,7 @@ class App {
     this.localReferenceSpace = await this.xrSession.requestReferenceSpace(
       'local'
     );
+
     this.viewerSpace = await this.xrSession.requestReferenceSpace('viewer');
 
     this.hitTestSource = await this.xrSession.requestHitTestSource({
@@ -102,21 +102,20 @@ class App {
   onSelect = () => {
     if (this.fieldCreated) {
       return;
+      // this.scene.remove(this.playerPaddle);
+      // this.scene.remove(this.enemyPaddle);
+      // this.scene.remove(this.ball);
+      // this.scene.remove(this.lineLoop);
+      // this.fieldCreated = false;
+      // shouldUpdateGridPosition = true;
     }
 
     const position = this.reticle.position.clone();
     this.tapPositions.push(position);
 
     if (this.tapPositions.length === 1) {
-      // First tap
       this.fieldOrientation.copy(this.reticle.quaternion);
-      this.firstTapPosition = position.clone();
       shouldUpdateGridPosition = false;
-
-      // Set ghostFieldGroup orientation and position
-      this.ghostFieldGroup.position.copy(this.firstTapPosition);
-      this.ghostFieldGroup.quaternion.copy(this.fieldOrientation);
-      this.scene.add(this.ghostFieldGroup);
 
       // Create ghost field
       if (!this.ghostField) {
@@ -128,12 +127,15 @@ class App {
         });
         const geometry = new THREE.BufferGeometry();
         this.ghostField = new THREE.LineLoop(geometry, material);
+        this.ghostFieldGroup.position.copy(position);
+        this.ghostFieldGroup.quaternion.copy(this.fieldOrientation);
         this.ghostFieldGroup.add(this.ghostField);
+
+        this.scene.add(this.ghostFieldGroup);
       }
     }
 
     if (this.tapPositions.length === 2) {
-      // Second tap
       this.createField();
     }
   };
@@ -149,7 +151,7 @@ class App {
 
     // Remove ghost field
     if (this.ghostField) {
-      this.ghostFieldGroup.remove(this.ghostField);
+      this.scene.remove(this.ghostField);
       this.ghostField.geometry.dispose();
       this.ghostField.material.dispose();
       this.ghostField = null;
@@ -199,7 +201,7 @@ class App {
     // Set paddle dimensions
     this.paddleWidth = this.fieldWidth * 0.2;
 
-    // Define paddle geometry and material
+    // **Define paddle geometry and material**
     const paddleGeometry = new THREE.BoxGeometry(
       this.paddleWidth,
       this.paddleHeight,
@@ -212,6 +214,7 @@ class App {
       color: 0xe01f26,
     });
 
+    // Create paddles relative to fieldGroup
     // Player Paddle
     this.playerPaddle = new THREE.Mesh(paddleGeometry, playerPaddleMaterial);
     this.playerPaddle.position.set(
@@ -230,11 +233,12 @@ class App {
     );
     this.fieldGroup.add(this.enemyPaddle);
 
-    // Ball
-    this.ballRadius = 0.03;
+    // **Define ball geometry and material**
+    this.ballRadius = 0.03; // Save ball radius as a class property
     const ballGeometry = new THREE.SphereGeometry(this.ballRadius, 16, 16);
     const ballMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
+    // Ball
     this.ball = new THREE.Mesh(ballGeometry, ballMaterial);
     this.ball.position.set(0, this.ballRadius, 0);
     this.fieldGroup.add(this.ball);
@@ -269,7 +273,6 @@ class App {
         this.stabilized = true;
         document.body.classList.add('stabilized');
       }
-
       if (hitTestResults.length > 0) {
         const hitPose = hitTestResults[0].getPose(this.localReferenceSpace);
 
@@ -286,24 +289,18 @@ class App {
           hitPose.transform.orientation.w
         );
         this.reticle.updateMatrixWorld(true);
-
         if (!this.fieldCreated) {
-          if (
-            this.tapPositions.length === 1 &&
-            this.ghostField &&
-            this.firstTapPosition
-          ) {
-            const pos1 = this.firstTapPosition;
+          if (this.tapPositions.length === 1 && this.ghostField) {
             const pos3 = this.reticle.position.clone();
 
+            // Compute other corners
             const pos2 = new THREE.Vector3(pos3.x, pos1.y, pos1.z);
             const pos4 = new THREE.Vector3(pos1.x, pos3.y, pos3.z);
 
-            const localPos1 = new THREE.Vector3(0, 0, 0);
+            const localPos1 = new THREE.Vector3(0, 0, 0); // pos1 is our origin
             const localPos2 = pos2.clone().sub(pos1);
             const localPos3 = pos3.clone().sub(pos1);
             const localPos4 = pos4.clone().sub(pos1);
-
             const vertices = [
               localPos1,
               localPos2,
@@ -311,6 +308,8 @@ class App {
               localPos4,
               localPos1,
             ];
+
+            // Update ghost field geometry
             const positions = new Float32Array(vertices.length * 3);
             for (let i = 0; i < vertices.length; i++) {
               positions[i * 3] = vertices[i].x;
@@ -337,6 +336,7 @@ class App {
           if (this.ghostField) {
             this.ghostField.visible = false;
           }
+
           this.updateGame();
         }
       }
@@ -426,6 +426,7 @@ class App {
       this.enemyPaddle.position.x = this.ball.position.x;
     }
 
+    // Clamp enemy paddle within field boundaries
     const maxPaddleX = halfFieldWidth - this.paddleWidth / 2;
     this.enemyPaddle.position.x = THREE.MathUtils.clamp(
       this.enemyPaddle.position.x,
@@ -444,9 +445,15 @@ class App {
     if (!this.fieldCreated) return;
 
     const touch = event.touches[0];
+
+    // Convert touch X position to normalized device coordinates (-1 to 1)
     const ndcX = (touch.clientX / window.innerWidth) * 2 - 1;
+
     const halfFieldWidth = this.fieldWidth / 2;
+
+    // Map NDC to field coordinates
     const fieldX = ndcX * halfFieldWidth;
+
     const maxPaddleX = halfFieldWidth - this.paddleWidth / 2;
     this.playerPaddle.position.x = THREE.MathUtils.clamp(
       fieldX,
