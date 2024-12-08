@@ -320,13 +320,9 @@ class App {
         } else {
           this.grid.visible = false;
           this.reticle.visible = false;
-          this.ghostField.visible = false;
-          // if (this.ghostField) {
-          //   this.scene.remove(this.ghostField);
-          //   this.ghostField.geometry.dispose();
-          //   this.ghostField.material.dispose();
-          //   this.ghostField = null;
-          // }
+          if (this.ghostField) {
+            this.ghostField.visible = false;
+          }
 
           this.updateGame();
         }
