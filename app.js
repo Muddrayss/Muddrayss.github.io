@@ -47,6 +47,7 @@ class App {
     this.centerZ = 0;
     this.ballRadius = 0.03;
     this.ghostField = null;
+    this.ghostFieldGroup = null;
   }
 
   activateXR = async () => {
@@ -99,37 +100,34 @@ class App {
   };
 
   onSelect = () => {
-    if (this.fieldCreated) {
-      return;
-      // this.scene.remove(this.playerPaddle);
-      // this.scene.remove(this.enemyPaddle);
-      // this.scene.remove(this.ball);
-      // this.scene.remove(this.lineLoop);
-      // this.fieldCreated = false;
-      // shouldUpdateGridPosition = true;
-    }
+    if (this.fieldCreated) return;
 
     const position = this.reticle.position.clone();
     this.tapPositions.push(position);
 
+    // First tap
     if (this.tapPositions.length === 1) {
       this.fieldOrientation.copy(this.reticle.quaternion);
       shouldUpdateGridPosition = false;
 
-      // Create ghost field
-      if (!this.ghostField) {
-        const material = new THREE.LineBasicMaterial({
-          color: 0xe1341e,
-          linewidth: 10,
-          transparent: true,
-          opacity: 0.5,
-        });
-        const geometry = new THREE.BufferGeometry();
-        this.ghostField = new THREE.LineLoop(geometry, material);
-        this.scene.add(this.ghostField);
-      }
+      // Create a group and ghost field at first tap position
+      this.ghostFieldGroup = new THREE.Group();
+      this.ghostFieldGroup.position.copy(position);
+      this.ghostFieldGroup.quaternion.copy(this.fieldOrientation);
+
+      const material = new THREE.LineBasicMaterial({
+        color: 0xe1341e,
+        linewidth: 10,
+        transparent: true,
+        opacity: 0.5,
+      });
+      const geometry = new THREE.BufferGeometry();
+      this.ghostField = new THREE.LineLoop(geometry, material);
+      this.ghostFieldGroup.add(this.ghostField);
+      this.scene.add(this.ghostFieldGroup);
     }
 
+    // Second tap
     if (this.tapPositions.length === 2) {
       this.createField();
     }
@@ -144,11 +142,10 @@ class App {
     const pos1 = this.tapPositions[0];
     const pos3 = this.tapPositions[1];
 
-    // Remove ghost field
-    if (this.ghostField) {
-      this.scene.remove(this.ghostField);
-      this.ghostField.geometry.dispose();
-      this.ghostField.material.dispose();
+    // Remove ghost field group entirely
+    if (this.ghostFieldGroup) {
+      this.scene.remove(this.ghostFieldGroup);
+      this.ghostFieldGroup = null;
       this.ghostField = null;
     }
 
@@ -161,7 +158,6 @@ class App {
     const centerY = (pos1.y + pos3.y) / 2;
     const centerZ = (pos1.z + pos3.z) / 2;
 
-    // Save center positions
     this.centerX = centerX;
     this.centerY = centerY;
     this.centerZ = centerZ;
@@ -196,7 +192,7 @@ class App {
     // Set paddle dimensions
     this.paddleWidth = this.fieldWidth * 0.2;
 
-    // **Define paddle geometry and material**
+    // Paddles
     const paddleGeometry = new THREE.BoxGeometry(
       this.paddleWidth,
       this.paddleHeight,
@@ -209,8 +205,6 @@ class App {
       color: 0xe01f26,
     });
 
-    // Create paddles relative to fieldGroup
-    // Player Paddle
     this.playerPaddle = new THREE.Mesh(paddleGeometry, playerPaddleMaterial);
     this.playerPaddle.position.set(
       0,
@@ -219,7 +213,6 @@ class App {
     );
     this.fieldGroup.add(this.playerPaddle);
 
-    // Enemy Paddle
     this.enemyPaddle = new THREE.Mesh(paddleGeometry, enemyPaddleMaterial);
     this.enemyPaddle.position.set(
       0,
@@ -228,12 +221,10 @@ class App {
     );
     this.fieldGroup.add(this.enemyPaddle);
 
-    // **Define ball geometry and material**
-    this.ballRadius = 0.03; // Save ball radius as a class property
+    // Ball
+    this.ballRadius = 0.03;
     const ballGeometry = new THREE.SphereGeometry(this.ballRadius, 16, 16);
     const ballMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-
-    // Ball
     this.ball = new THREE.Mesh(ballGeometry, ballMaterial);
     this.ball.position.set(0, this.ballRadius, 0);
     this.fieldGroup.add(this.ball);
@@ -252,10 +243,8 @@ class App {
     const pose = frame.getViewerPose(this.localReferenceSpace);
     if (pose) {
       const view = pose.views[0];
-
       const viewport = this.xrSession.renderState.baseLayer.getViewport(view);
       this.renderer.setSize(viewport.width, viewport.height);
-
       this.renderer.clear();
 
       this.camera.matrix.fromArray(view.transform.matrix);
@@ -268,6 +257,7 @@ class App {
         this.stabilized = true;
         document.body.classList.add('stabilized');
       }
+
       if (hitTestResults.length > 0) {
         const hitPose = hitTestResults[0].getPose(this.localReferenceSpace);
 
@@ -284,19 +274,39 @@ class App {
           hitPose.transform.orientation.w
         );
         this.reticle.updateMatrixWorld(true);
+
         if (!this.fieldCreated) {
-          if (this.tapPositions.length === 1 && this.ghostField) {
-            const pos1 = this.tapPositions[0];
+          // Update ghost field preview if we have one point placed
+          if (
+            this.tapPositions.length === 1 &&
+            this.ghostField &&
+            this.ghostFieldGroup
+          ) {
             const pos3 = this.reticle.position.clone();
 
-            // Compute other corners
-            const pos2 = new THREE.Vector3(pos3.x, pos1.y, pos1.z);
-            const pos4 = new THREE.Vector3(pos1.x, pos3.y, pos3.z);
+            // Convert the second point to local coordinates of the ghostFieldGroup
+            let localPos3 = this.ghostFieldGroup.worldToLocal(pos3.clone());
 
-            // Array of vertices to form the rectangle
-            const vertices = [pos1, pos2, pos3, pos4, pos1];
+            // localPos1 is always (0,0,0) since first point is group origin
+            const localPos1 = new THREE.Vector3(0, 0, 0);
+            // Construct the rectangle
+            const localPos2 = new THREE.Vector3(localPos3.x, 0, 0);
+            const localPos4 = new THREE.Vector3(0, localPos3.y, localPos3.z);
 
-            // Update ghost field geometry
+            // Actually, since we defined pos3 in local, we must define pos2 and pos4 carefully:
+            // We know pos2 differs only in x from localPos1 and shares yz with localPos1.
+            // We know pos4 differs only in y,z. Let's form a rectangle properly:
+            // For a rectangle defined by localPos3 (x,y,z), the opposite corners are localPos1(0,0,0) and localPos3(x,y,z).
+            // The other two corners are localPos2(x,0,0) and localPos4(0,y,z).
+            // This creates a rectangle in the local coordinate system of ghostFieldGroup.
+            const vertices = [
+              localPos1,
+              localPos2,
+              localPos3,
+              localPos4,
+              localPos1,
+            ];
+
             const positions = new Float32Array(vertices.length * 3);
             for (let i = 0; i < vertices.length; i++) {
               positions[i * 3] = vertices[i].x;
@@ -318,11 +328,10 @@ class App {
           }
           this.grid.updateMatrixWorld(true);
         } else {
+          // Field created, hide grid and ghost field
           this.grid.visible = false;
           this.reticle.visible = false;
-          if (this.ghostField) {
-            this.ghostField.visible = false;
-          }
+          if (this.ghostField) this.ghostField.visible = false;
 
           this.updateGame();
         }
@@ -406,14 +415,12 @@ class App {
     // Enemy paddle AI
     const deltaX = this.ball.position.x - this.enemyPaddle.position.x;
     const maxMovement = this.enemyPaddleSpeed;
-
     if (Math.abs(deltaX) > maxMovement) {
       this.enemyPaddle.position.x += Math.sign(deltaX) * maxMovement;
     } else {
       this.enemyPaddle.position.x = this.ball.position.x;
     }
 
-    // Clamp enemy paddle within field boundaries
     const maxPaddleX = halfFieldWidth - this.paddleWidth / 2;
     this.enemyPaddle.position.x = THREE.MathUtils.clamp(
       this.enemyPaddle.position.x,
